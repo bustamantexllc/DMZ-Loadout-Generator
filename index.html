@@ -108,6 +108,35 @@
     .slotTop{display:flex; align-items:center; justify-content:space-between; gap:8px; position:relative;}
     .label{color:var(--muted); font-size:12px; letter-spacing:.5px; text-transform:uppercase;}
     .value{margin-top:6px; font-size:16px; font-weight:650; position:relative;}
+    .attach{
+      margin-top:10px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding-top:8px;
+      position:relative;
+    }
+    .attachTitle{
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.5px;
+    }
+    .attachList{
+      margin-top:6px;
+      display:grid;
+      gap:4px;
+    }
+    .attachItem{
+      font-size:12px;
+      color:rgba(234,241,255,.92);
+      line-height:1.25;
+    }
+    .attachItem span{
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.35px;
+      font-size:11px;
+      margin-right:6px;
+    }
 
     .missionLine{
       border:1px solid rgba(255,255,255,.08);
@@ -318,9 +347,7 @@
       <div class="brand">
         <div class="title">
           <h1>DMZ MW2 Loadout + Mission Generator</h1>
-          <p>
-            DMZ (MW2) only • Regain ONLY adds extra loadout slots (no mission changes)
-          </p>
+          <p>DMZ (MW2) only • Regain adds extra slots only • Attachments toggle adds random attachments for weapons</p>
         </div>
         <div class="pill"><span class="dot"></span><span id="seedLabel">Seed: —</span></div>
       </div>
@@ -337,7 +364,8 @@
 
         <div class="sectionBody">
           <div class="mutedNote" style="margin-bottom:10px;">
-            <b>Base Infil Kit</b> always rolls. Turning <b>Regain Mode</b> ON only adds <b>Extra Gear</b> slots (Vest/Backpack/Revive/Mask).
+            <b>Base Infil Kit</b> always rolls. <b>Regain Mode</b> adds Vest/Backpack/Revive/Mask slots only.
+            <br><b>Random Attachments</b> adds attachments to Primary/Secondary.
           </div>
 
           <div class="grid2" id="baseLoadoutSlots"></div>
@@ -382,7 +410,7 @@
           </div>
           <input id="diffSlider" type="range" min="0" max="2" step="1" value="0" />
         </div>
-        <div class="mutedNote">Regain does not affect missions.</div>
+        <div class="mutedNote">Regain/Attachments do not affect missions.</div>
       </div>
 
       <div class="card panel">
@@ -390,12 +418,21 @@
         <div class="toggle">
           <div class="tL">
             <b>Regain Mode</b>
-            <span>ONLY adds Vest/Backpack/Revive/Mask slots</span>
+            <span>Adds Vest/Backpack/Revive/Mask slots</span>
           </div>
           <div class="switch" id="regainSwitch" data-on="false" role="switch" aria-checked="false"></div>
         </div>
+
+        <div class="toggle" style="margin-top:10px;">
+          <div class="tL">
+            <b>Random Attachments</b>
+            <span>Adds attachments to Primary/Secondary</span>
+          </div>
+          <div class="switch" id="attachSwitch" data-on="false" role="switch" aria-checked="false"></div>
+        </div>
+
         <div class="mutedNote" style="margin-top:10px;">
-          If you ever notice a missing option, hit <b>Edit Pools</b> and paste it in.
+          If you notice a missing weapon, hit <b>Edit Pools</b> and paste it in.
         </div>
       </div>
 
@@ -445,15 +482,7 @@
   </div>
 
 <script>
-/**
- * RULES YOU SET (locked in):
- * - DMZ MW2 only
- * - Regain ONLY adds extra loadout slots (Vest/Backpack/Revive/Mask)
- * - Regain has NO impact on missions
- * - Every loadout slot has a full pool (and editable)
- */
-
-const STORAGE_KEY = "dmz_mw2_pools_v2";
+const STORAGE_KEY = "dmz_mw2_pools_v3";
 
 /* MW2 DMZ pools (default). You can edit/add anything via Edit Pools. */
 const DEFAULT_POOLS = {
@@ -502,7 +531,80 @@ const DEFAULT_POOLS = {
   MASK: ["Gas Mask","Durable Gas Mask","Radiation Blocker"]
 };
 
-/* Missions (Regain NEVER touches these) */
+/* Weapon-type lookup (used only for attachments). If a weapon isn't found, we treat it as "RIFLE" for slots. */
+const WEAPON_TYPE = {
+  RIFLE: new Set([
+    "M4","TAQ-56","Kastov 762","Lachmann-556","STB 556","M16","Kastov-74u","Kastov 545",
+    "M13B","Chimera","ISO Hemlock","Tempus Razorback","FR Avancer","M13C","TR-76 Geist",
+    "Lachmann-762","SO-14","TAQ-V","FTAC Recon","Cronen Squall",
+    "VEL 46","MX9","Lachmann Sub","Vaznev-9K","FSS Hurricane","Minibak","PDSW 528","Fennec 45","BAS-P",
+    "ISO 45","Lachmann Shroud",
+    "SAKIN MG38","HCR 56","556 Icarus","RAAL MG","RPK","RAPP H",
+    "EBR-14","SP-R 208","Lockwood MK2","LM-S","SA-B 50","TAQ-M","Tempus Torrent",
+    "MCPR-300","Signal 50","LA-B 330","SP-X 80","Victus XMR","FJX Imperium","Carrack .300"
+  ]),
+  SHOTGUN: new Set(["Lockwood 300","Expedite 12","Bryson 800","Bryson 890","KV Broadside","MX Guardian"]),
+  PISTOL: new Set(["P890",".50 GS","X12","Basilisk","X13 Auto","FTac Siege","GS Magna","9mm Daemon"]),
+  LAUNCHER: new Set(["RPG-7","PILA","JOKR","Strela-P"]),
+  MELEE: new Set(["Riot Shield","Combat Knife","Dual Kodachis","Tonfa","Pickaxe","Dual Kamas"]),
+  SPECIAL: new Set(["Crossbow"])
+};
+
+/* Attachments pools (MW2-styled). */
+const ATTACH_POOLS = {
+  OPTIC: [
+    "Cronen Mini Pro","Slimline Pro","VLK 4.0 Optic","Aim OP-V4","SZ Holotherm",
+    "Cronen C480 Pro Optic","Xten Angel-40","DF105 Reflex Sight","Thermo-Optic X9"
+  ],
+  MUZZLE: [
+    "Sakin Tread-40","Echoless-80","Harbinger D20","Lockshot KT85","Komodo Heavy",
+    "Bryson Choke","XTEN Ported 290","RF Crown 50"
+  ],
+  BARREL: [
+    "Long Barrel","Heavy Barrel","Short Barrel","Precision Barrel","Rifle-Length Barrel",
+    "XRK Barrel","FTAC Barrel","Hightower Barrel"
+  ],
+  UNDERBARREL: [
+    "FSS Sharkfin 90","Edge-47 Grip","Commando Foregrip","FTAC Ripper 56","VX Pineapple",
+    "Bipod (if available)"
+  ],
+  MAGAZINE: [
+    "Extended Mag","High Capacity Mag","Fast Mag","Drum Mag (if available)","Small Caliber Mag"
+  ],
+  LASER: [
+    "FSS OLE-V Laser","VLK LZR 7mW","1mW Quick Fire Laser","Hipfire Laser","Laser Box"
+  ],
+  STOCK: [
+    "Heavy Stock","Light Stock","No Stock","Tactical Stock","Precision Stock"
+  ],
+  REAR_GRIP: [
+    "Granular Grip","Stippled Grip Tape","Rubberized Grip Tape","Ergonomic Grip","Recoil Grip"
+  ],
+  AMMO: [
+    "High Velocity","Armor Piercing","Hollowpoint","Incendiary","Frangible"
+  ],
+  BOLT: [
+    "Fast Bolt","Light Bolt","Heavy Bolt"
+  ],
+  GUARD: [
+    "Guard: Tactical","Guard: Heavy","Guard: Lightweight"
+  ],
+  TRIGGER: [
+    "Hair Trigger","Match Trigger","Heavy Trigger","Quickdraw Trigger"
+  ]
+};
+
+/* Which attachment slots each weapon type can roll */
+const ATTACH_SLOTS_BY_TYPE = {
+  RIFLE: ["OPTIC","MUZZLE","BARREL","UNDERBARREL","MAGAZINE","LASER","STOCK","REAR_GRIP","AMMO"],
+  SHOTGUN: ["OPTIC","MUZZLE","BARREL","UNDERBARREL","MAGAZINE","LASER","STOCK","GUARD","AMMO"],
+  PISTOL: ["OPTIC","MUZZLE","BARREL","MAGAZINE","LASER","REAR_GRIP","AMMO","TRIGGER"],
+  SPECIAL: ["OPTIC","UNDERBARREL","AMMO","BOLT"],
+  LAUNCHER: [],      // no attachments
+  MELEE: []          // no attachments
+};
+
+/* Missions (Regain/Attachments NEVER touch these) */
 const MISSION_BANK = {
   easy: {
     objective: [
@@ -599,7 +701,7 @@ const MISSION_BANK = {
 const ORDER_BASE = ["Primary","Secondary","Tactical","Lethal","Field Upgrade"];
 const ORDER_EXTRA = ["Vest","Backpack","Revive","Mask"];
 
-const state = { seed:null, regain:false, difficulty:0 };
+const state = { seed:null, regain:false, attachments:false, difficulty:0 };
 
 const elSeed = document.getElementById("seedLabel");
 const toast = document.getElementById("toast");
@@ -621,7 +723,6 @@ function showToast(msg){
   toast.classList.add("show");
   setTimeout(()=>toast.classList.remove("show"), 1200);
 }
-
 function randSeed(){ return Math.random().toString(36).slice(2, 8).toUpperCase(); }
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function escapeHtml(s){
@@ -646,14 +747,12 @@ function normalizeList(text){
       .filter(Boolean)
   ));
 }
-
 function loadPools(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(!raw) return structuredClone(DEFAULT_POOLS);
     const parsed = JSON.parse(raw);
     const merged = { ...structuredClone(DEFAULT_POOLS), ...parsed };
-    // Ensure arrays + de-dupe
     for(const k of Object.keys(merged)){
       if(!Array.isArray(merged[k])) merged[k] = [];
       merged[k] = Array.from(new Set(merged[k].map(x=>String(x).trim()).filter(Boolean)));
@@ -663,7 +762,6 @@ function loadPools(){
     return structuredClone(DEFAULT_POOLS);
   }
 }
-
 function savePools(pools){
   const safe = { ...structuredClone(DEFAULT_POOLS), ...pools };
   for(const k of Object.keys(safe)){
@@ -672,12 +770,55 @@ function savePools(pools){
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(safe, null, 2));
 }
+function getPools(){ return loadPools(); }
 
-function getPools(){
-  return loadPools();
+function getWeaponType(weaponName){
+  if(WEAPON_TYPE.LAUNCHER.has(weaponName)) return "LAUNCHER";
+  if(WEAPON_TYPE.MELEE.has(weaponName)) return "MELEE";
+  if(WEAPON_TYPE.SHOTGUN.has(weaponName)) return "SHOTGUN";
+  if(WEAPON_TYPE.PISTOL.has(weaponName)) return "PISTOL";
+  if(WEAPON_TYPE.SPECIAL.has(weaponName)) return "SPECIAL";
+  if(WEAPON_TYPE.RIFLE.has(weaponName)) return "RIFLE";
+  return "RIFLE"; // fallback for added weapons via pools editor
 }
 
-/* Loadout generation: Primary + Secondary pull from ALL_WEAPONS (every MW2 weapon). */
+function rollAttachmentsForWeapon(weaponName){
+  const type = getWeaponType(weaponName);
+  const slots = ATTACH_SLOTS_BY_TYPE[type] || [];
+  if(!slots.length) return []; // launchers/melee: none
+
+  // Choose 5 distinct slots (or fewer if limited)
+  const shuffledSlots = slots.slice().sort(()=>Math.random()-0.5);
+  const takeN = Math.min(5, shuffledSlots.length);
+  const chosenSlots = shuffledSlots.slice(0, takeN);
+
+  const att = [];
+  for(const slotKey of chosenSlots){
+    const pool = ATTACH_POOLS[slotKey] || [];
+    if(!pool.length) continue;
+    att.push({ slot: slotKey, name: pick(pool) });
+  }
+  return att;
+}
+
+function niceSlotName(slotKey){
+  return ({
+    OPTIC:"Optic",
+    MUZZLE:"Muzzle",
+    BARREL:"Barrel",
+    UNDERBARREL:"Underbarrel",
+    MAGAZINE:"Magazine",
+    LASER:"Laser",
+    STOCK:"Stock",
+    REAR_GRIP:"Rear Grip",
+    AMMO:"Ammunition",
+    BOLT:"Bolt",
+    GUARD:"Guard",
+    TRIGGER:"Trigger"
+  })[slotKey] || slotKey;
+}
+
+/* Loadout generation */
 function generateLoadout(pools){
   const allWeapons = pools.ALL_WEAPONS ?? [];
   const primary = pick(allWeapons) || "—";
@@ -705,10 +846,16 @@ function generateLoadout(pools){
     extra.Mask = pick(pools.MASK ?? []) || "—";
   }
 
-  return { base, extra };
+  const attachments = {};
+  if(state.attachments){
+    attachments.Primary = rollAttachmentsForWeapon(primary);
+    attachments.Secondary = rollAttachmentsForWeapon(secondary);
+  }
+
+  return { base, extra, attachments };
 }
 
-/* Mission generation: Regain has NO impact. */
+/* Mission generation (unchanged by Regain/Attachments) */
 function generateMission(){
   const key = difficultyKey();
   const bank = MISSION_BANK[key];
@@ -723,10 +870,33 @@ function generateMission(){
 function renderLoadout(loadout){
   elBaseSlots.innerHTML = ORDER_BASE.map(k=>{
     const v = loadout.base[k] ?? "—";
+    const isWeapon = (k === "Primary" || k === "Secondary");
+    const att = isWeapon ? (loadout.attachments?.[k] || []) : [];
+    const showAtt = state.attachments && isWeapon && Array.isArray(att) && att.length > 0;
+
+    const attHtml = showAtt ? `
+      <div class="attach">
+        <div class="attachTitle">Attachments</div>
+        <div class="attachList">
+          ${att.map(a=>`
+            <div class="attachItem"><span>${escapeHtml(niceSlotName(a.slot))}</span>${escapeHtml(a.name)}</div>
+          `).join("")}
+        </div>
+      </div>
+    ` : (state.attachments && isWeapon ? `
+      <div class="attach">
+        <div class="attachTitle">Attachments</div>
+        <div class="attachList">
+          <div class="attachItem"><span>Info</span>No attachments for this weapon</div>
+        </div>
+      </div>
+    ` : "");
+
     return `
       <div class="slot">
         <div class="slotTop"><div class="label">${escapeHtml(k)}</div></div>
         <div class="value">${escapeHtml(v)}</div>
+        ${attHtml}
       </div>
     `;
   }).join("");
@@ -734,18 +904,17 @@ function renderLoadout(loadout){
   elExtraWrap.classList.toggle("hidden", !state.regain);
   if(!state.regain){
     elExtraSlots.innerHTML = "";
-    return;
+  }else{
+    elExtraSlots.innerHTML = ORDER_EXTRA.map(k=>{
+      const v = loadout.extra[k] ?? "—";
+      return `
+        <div class="slot">
+          <div class="slotTop"><div class="label">${escapeHtml(k)}</div></div>
+          <div class="value">${escapeHtml(v)}</div>
+        </div>
+      `;
+    }).join("");
   }
-
-  elExtraSlots.innerHTML = ORDER_EXTRA.map(k=>{
-    const v = loadout.extra[k] ?? "—";
-    return `
-      <div class="slot">
-        <div class="slotTop"><div class="label">${escapeHtml(k)}</div></div>
-        <div class="value">${escapeHtml(v)}</div>
-      </div>
-    `;
-  }).join("");
 }
 
 function renderMission(m){
@@ -766,6 +935,8 @@ function renderMission(m){
   }).join("");
 }
 
+let lastRoll = null;
+
 function roll(){
   const pools = getPools();
 
@@ -775,7 +946,12 @@ function roll(){
   const kit = generateLoadout(pools);
   const mission = generateMission();
 
-  elLoadoutHeadline.textContent = `${state.regain ? "Regain ON (Extra Slots Added)" : "Regain OFF (Base Kit)"} • ${state.seed}`;
+  lastRoll = { kit, mission, seed: state.seed };
+
+  elLoadoutHeadline.textContent =
+    `${state.regain ? "Regain ON (Extra Slots Added)" : "Regain OFF (Base Kit)"} • ` +
+    `${state.attachments ? "Attachments ON" : "Attachments OFF"} • ${state.seed}`;
+
   elMissionHeadline.textContent = `${["Easy","Normal","Spicy"][state.difficulty]} • ${state.seed}`;
 
   renderLoadout(kit);
@@ -783,32 +959,58 @@ function roll(){
 }
 
 async function copyText(){
-  const pools = getPools();
-  const kit = generateLoadout(pools);
-  const mission = generateMission();
+  const snapshot = lastRoll || { kit: null, mission: null, seed: state.seed || "—" };
+  const kit = snapshot.kit;
+  const mission = snapshot.mission;
 
   const blocks = [];
-  blocks.push(`DMZ MW2 GENERATOR — ${state.seed ?? "—"}`);
+  blocks.push(`DMZ MW2 GENERATOR — ${snapshot.seed ?? "—"}`);
   blocks.push(`Regain: ${state.regain ? "ON (Extra Slots Added)" : "OFF (Base Kit)"}`);
+  blocks.push(`Attachments: ${state.attachments ? "ON" : "OFF"}`);
   blocks.push(`Mission Difficulty: ${["Easy","Normal","Spicy"][state.difficulty]}`);
   blocks.push("");
-  blocks.push("LOADOUT (BASE):");
-  blocks.push(`Primary: ${kit.base.Primary}`);
-  blocks.push(`Secondary: ${kit.base.Secondary}`);
-  blocks.push(`Tactical: ${kit.base.Tactical}`);
-  blocks.push(`Lethal: ${kit.base.Lethal}`);
-  blocks.push(`Field Upgrade: ${kit.base["Field Upgrade"]}`);
-  if(state.regain){
-    blocks.push("");
-    blocks.push("LOADOUT (EXTRA):");
-    blocks.push(`Vest: ${kit.extra.Vest}`);
-    blocks.push(`Backpack: ${kit.extra.Backpack}`);
-    blocks.push(`Revive: ${kit.extra.Revive}`);
-    blocks.push(`Mask: ${kit.extra.Mask}`);
+
+  if(kit){
+    blocks.push("LOADOUT (BASE):");
+    blocks.push(`Primary: ${kit.base.Primary}`);
+    if(state.attachments){
+      const a = kit.attachments?.Primary || [];
+      if(a.length){
+        blocks.push(`Primary Attachments:`);
+        a.forEach(x=>blocks.push(`- ${niceSlotName(x.slot)}: ${x.name}`));
+      }else{
+        blocks.push(`Primary Attachments: None`);
+      }
+    }
+    blocks.push(`Secondary: ${kit.base.Secondary}`);
+    if(state.attachments){
+      const a = kit.attachments?.Secondary || [];
+      if(a.length){
+        blocks.push(`Secondary Attachments:`);
+        a.forEach(x=>blocks.push(`- ${niceSlotName(x.slot)}: ${x.name}`));
+      }else{
+        blocks.push(`Secondary Attachments: None`);
+      }
+    }
+    blocks.push(`Tactical: ${kit.base.Tactical}`);
+    blocks.push(`Lethal: ${kit.base.Lethal}`);
+    blocks.push(`Field Upgrade: ${kit.base["Field Upgrade"]}`);
+
+    if(state.regain){
+      blocks.push("");
+      blocks.push("LOADOUT (EXTRA):");
+      blocks.push(`Vest: ${kit.extra.Vest}`);
+      blocks.push(`Backpack: ${kit.extra.Backpack}`);
+      blocks.push(`Revive: ${kit.extra.Revive}`);
+      blocks.push(`Mask: ${kit.extra.Mask}`);
+    }
   }
-  blocks.push("");
-  blocks.push("MISSION:");
-  Object.keys(mission).forEach(k=>blocks.push(`${k}: ${mission[k]}`));
+
+  if(mission){
+    blocks.push("");
+    blocks.push("MISSION:");
+    Object.keys(mission).forEach(k=>blocks.push(`${k}: ${mission[k]}`));
+  }
 
   const text = blocks.join("\n");
 
@@ -852,7 +1054,6 @@ function closeModal(){
   modalOverlay.classList.remove("show");
   modalOverlay.setAttribute("aria-hidden","true");
 }
-
 function renderPoolsEditor(){
   const pools = getPools();
   modalGrid.innerHTML = "";
@@ -869,7 +1070,6 @@ function renderPoolsEditor(){
     box.querySelector("textarea").value = (pools[key] ?? []).join("\n");
   }
 }
-
 function saveFromEditor(){
   const next = {};
   for(const [key] of POOL_FIELDS){
@@ -879,7 +1079,6 @@ function saveFromEditor(){
   savePools(next);
   showToast("Pools saved");
 }
-
 async function copyPoolsJson(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY) || JSON.stringify(getPools(), null, 2);
@@ -889,7 +1088,6 @@ async function copyPoolsJson(){
     showToast("Copy failed");
   }
 }
-
 function resetPools(){
   localStorage.removeItem(STORAGE_KEY);
   renderPoolsEditor();
@@ -933,6 +1131,14 @@ diffSlider.addEventListener("input", ()=>{
   regainEl.addEventListener("click", ()=>{
     state.regain = !state.regain;
     setSwitch(regainEl, state.regain);
+    roll();
+  });
+
+  const attachEl = document.getElementById("attachSwitch");
+  setSwitch(attachEl, state.attachments);
+  attachEl.addEventListener("click", ()=>{
+    state.attachments = !state.attachments;
+    setSwitch(attachEl, state.attachments);
     roll();
   });
 
