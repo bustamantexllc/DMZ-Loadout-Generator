@@ -1,333 +1,657 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DMZ Loadout + Mission Generator</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DMZ Loadout + Mission Generator</title>
+  <style>
+    :root{
+      --bg0:#070A12; --bg1:#0B1220;
+      --text:#EAF1FF; --muted:#A9B7D6;
+      --accent:#6BE4FF; --accent2:#9B7CFF;
+      --border:rgba(255,255,255,.10);
+      --shadow: 0 20px 60px rgba(0,0,0,.55);
+      --radius: 22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 20% -10%, rgba(155,124,255,.25), transparent 60%),
+        radial-gradient(900px 700px at 100% 20%, rgba(107,228,255,.18), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+    }
+    .wrap{
+      width:min(1100px, 100%);
+      display:grid;
+      gap:18px;
+      grid-template-columns: 1.25fr .75fr;
+    }
+    @media (max-width: 960px){ .wrap{grid-template-columns:1fr} }
 
-<style>
-:root{
-  --bg0:#070A12; --bg1:#0B1220;
-  --text:#EAF1FF; --muted:#A9B7D6;
-  --accent:#6BE4FF; --accent2:#9B7CFF;
-  --border:rgba(255,255,255,.10);
-  --radius:22px;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto;
-  color:var(--text);
-  background:linear-gradient(180deg,var(--bg0),var(--bg1));
-  padding:20px;
-}
-.wrap{max-width:1100px;margin:auto;display:grid;gap:18px;grid-template-columns:1.2fr .8fr}
-@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+    .brand{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px;
+      padding:14px 16px;
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow: var(--shadow);
+    }
+    .title{display:flex; flex-direction:column; gap:2px;}
+    .title h1{margin:0; font-size:18px; letter-spacing:.5px}
+    .title p{margin:0; color:var(--muted); font-size:13px}
+    .pill{
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+      display:flex; align-items:center; gap:8px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 16px rgba(107,228,255,.4);
+    }
 
-.card{
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(255,255,255,.03);
-  overflow:hidden;
-}
-.header{padding:16px;border-bottom:1px solid var(--border)}
-.header h1{margin:0;font-size:20px}
-.sub{color:var(--muted);font-size:13px}
+    .card{
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .cardHeader{
+      padding:16px 16px 10px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), transparent);
+    }
+    .cardHeader h2{margin:0; font-size:14px; letter-spacing:.8px; color:var(--muted); text-transform:uppercase}
+    .cardHeader .sub{margin-top:4px; color:rgba(234,241,255,.92); font-size:18px; font-weight:650}
 
-.section{padding:14px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:600px){.grid{grid-template-columns:1fr}}
+    .sectionBody{padding:14px;}
+    .grid2{
+      display:grid; gap:10px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 560px){ .grid2{grid-template-columns:1fr} }
 
-.box{
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:10px;
-  background:rgba(255,255,255,.02);
-}
-.label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
-.value{font-size:16px;font-weight:600;margin-top:4px}
+    .slot{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(14,26,46,.75), rgba(11,22,40,.75));
+      padding:12px 12px 10px;
+      position:relative;
+      overflow:hidden;
+      outline:none;
+    }
+    .slot::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(600px 160px at 10% 0%, rgba(107,228,255,.12), transparent 55%),
+                  radial-gradient(520px 180px at 90% 10%, rgba(155,124,255,.12), transparent 55%);
+      pointer-events:none;
+    }
+    .slotTop{display:flex; align-items:center; justify-content:space-between; gap:8px; position:relative;}
+    .label{color:var(--muted); font-size:12px; letter-spacing:.5px; text-transform:uppercase;}
+    .value{margin-top:6px; font-size:16px; font-weight:650; position:relative;}
 
-button{
-  border:none;
-  border-radius:14px;
-  padding:10px 14px;
-  font-weight:700;
-  cursor:pointer;
-}
-.primary{
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  color:#061018;
-}
-.secondary{
-  background:rgba(255,255,255,.05);
-  color:var(--text);
-}
+    .missionLine{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,.03);
+      padding:12px;
+      margin-bottom:10px;
+    }
+    .missionLine:last-child{margin-bottom:0}
+    .missionKey{font-size:12px; color:var(--muted); letter-spacing:.5px; text-transform:uppercase;}
+    .missionVal{font-size:15px; font-weight:650; line-height:1.25; margin-top:6px;}
+    .missionHint{margin-top:6px; font-size:12px; color:var(--muted); line-height:1.35;}
 
-.controls{display:flex;gap:10px;flex-wrap:wrap;padding:14px;border-top:1px solid var(--border)}
+    .controls{
+      padding:14px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      border-top:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,.12));
+    }
+    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; }
+    button.primary{
+      border:none;
+      border-radius: 16px;
+      padding:12px 16px;
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:.6px;
+      color:#061018;
+      cursor:pointer;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 12px 40px rgba(107,228,255,.18);
+    }
+    button.secondary{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      padding:12px 14px;
+      font-size:14px;
+      font-weight:650;
+      color:var(--text);
+      background: rgba(255,255,255,.03);
+      cursor:pointer;
+    }
 
-.toggle{
-  display:flex;justify-content:space-between;align-items:center;gap:12px;
-  border:1px solid var(--border);border-radius:16px;padding:10px;
-  background:rgba(255,255,255,.02);
-}
-.switch{
-  width:44px;height:24px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;cursor:pointer;
-}
-.switch::after{
-  content:"";width:18px;height:18px;border-radius:50%;
-  background:rgba(255,255,255,.92);position:absolute;top:3px;left:3px;transition:.2s;
-}
-.switch.on{background:rgba(107,228,255,.35)}
-.switch.on::after{left:23px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+    .side{display:flex; flex-direction:column; gap:18px;}
+    .panel{padding:14px 14px 12px;}
+    .panel h3{ margin:0 0 8px; font-size:14px; letter-spacing:.7px; text-transform:uppercase; color:var(--muted); }
 
-.hidden{display:none}
+    .toggle{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:12px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,.03);
+    }
+    .toggle .tL{display:flex; flex-direction:column; gap:4px;}
+    .toggle .tL b{font-size:14px}
+    .toggle .tL span{font-size:12px; color:var(--muted)}
+    .switch{
+      width:44px; height:26px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      position:relative;
+      cursor:pointer;
+      flex:0 0 auto;
+      user-select:none;
+    }
+    .switch::after{
+      content:"";
+      width:20px; height:20px;
+      border-radius:999px;
+      position:absolute;
+      top:50%; left:3px;
+      transform:translateY(-50%);
+      background: rgba(234,241,255,.86);
+      transition: left .15s ease, background .15s ease;
+    }
+    .switch[data-on="true"]{ border-color: rgba(107,228,255,.35); background: rgba(107,228,255,.12); }
+    .switch[data-on="true"]::after{ left:21px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
 
-pre{
-  margin:10px 0 0;
-  padding:10px;
-  border-radius:16px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,.20);
-  color:rgba(234,241,255,.92);
-  white-space:pre-wrap;
-  word-break:break-word;
-  font-size:12px;
-  line-height:1.4;
-}
-</style>
+    .sliderBox{
+      padding:12px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,.03);
+    }
+    .sliderTop{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;}
+    .sliderTop b{font-size:14px}
+    .sliderTop span{font-size:12px; color:var(--muted)}
+    input[type="range"]{width:100%}
+
+    details{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,.03);
+      padding:10px 12px;
+    }
+    summary{cursor:pointer; list-style:none; font-weight:650;}
+    summary::-webkit-details-marker{display:none}
+    .optGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    @media(max-width:560px){.optGrid{grid-template-columns:1fr}}
+    .optBox{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding:10px;
+      background: rgba(0,0,0,.10);
+    }
+    .optBox b{display:block; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;}
+    .optBox ul{margin:0; padding-left:16px; color:rgba(234,241,255,.92); font-size:12px; line-height:1.4}
+
+    .mutedNote{color:var(--muted); font-size:12px; margin-top:8px; line-height:1.4}
+    .hidden{display:none !important;}
+    .toast{
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10,16,28,.92);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(234,241,255,.95);
+      padding: 10px 12px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+      font-size: 13px;
+      z-index: 99;
+    }
+    .toast.show{opacity:1; transform: translateX(-50%) translateY(-6px);}
+  </style>
 </head>
 
 <body>
-<div class="wrap">
-
-<!-- LEFT -->
-<div>
-  <div class="card">
-    <div class="header">
-      <h1>DMZ Loadout + Mission Generator</h1>
-      <div class="sub">Loadout in its own section • Mission has details • Regain hides full loadout pools</div>
-    </div>
-
-    <!-- LOADOUT -->
-    <div class="section" id="loadoutSection">
-      <h3 style="margin:0 0 10px;">Loadout</h3>
-      <div class="grid" id="loadoutGrid"></div>
-    </div>
-
-    <!-- MISSION -->
-    <div class="section">
-      <h3 style="margin:0 0 10px;">Mission</h3>
-      <div id="missionBox"></div>
-    </div>
-
-    <div class="controls">
-      <button class="primary" onclick="roll()">ROLL</button>
-      <button class="secondary" onclick="copyText()">COPY</button>
-    </div>
-  </div>
-</div>
-
-<!-- RIGHT -->
-<div>
-  <div class="card section">
-    <h3 style="margin:0 0 10px;">Mission Difficulty</h3>
-    <input type="range" min="0" max="2" value="0" id="difficulty" oninput="updateDiff()">
-    <div class="sub" id="diffLabel" style="margin-top:8px;">Easy</div>
-    <div class="sub" style="margin-top:6px;">Difficulty only affects the mission.</div>
-  </div>
-
-  <div class="card section">
-    <div class="toggle">
-      <div>
-        <b>Regain Mode</b>
-        <div class="sub">Hides full loadout option pools</div>
+  <div class="wrap">
+    <div>
+      <div class="brand">
+        <div class="title">
+          <h1>DMZ Loadout + Mission Generator</h1>
+          <p>Regain only adds extra loadout items • missions never change</p>
+        </div>
+        <div class="pill"><span class="dot"></span><span id="seedLabel">Seed: —</span></div>
       </div>
-      <div id="regainSwitch" class="switch" onclick="toggleRegain()"></div>
+
+      <!-- LOADOUT -->
+      <div class="card" id="loadoutCard" style="margin-top:14px;">
+        <div class="cardHeader">
+          <div>
+            <h2>Loadout</h2>
+            <div class="sub" id="loadoutHeadline">Tap ROLL to generate</div>
+          </div>
+          <div class="pill" title="Regain adds extra gear slots (vest/backpack/revive/mask)">DMZ items only</div>
+        </div>
+
+        <div class="sectionBody">
+          <div class="mutedNote" style="margin-bottom:10px;">
+            <b>Base Infil Kit</b> is always generated. Turning <b>Regain Mode</b> ON adds <b>Extra Gear</b> slots.
+          </div>
+
+          <div class="grid2" id="baseLoadoutSlots"></div>
+
+          <div id="extraGearWrap" class="hidden" style="margin-top:12px;">
+            <div class="mutedNote" style="margin-bottom:10px;"><b>Extra Gear (Regain)</b></div>
+            <div class="grid2" id="extraLoadoutSlots"></div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="btnRow">
+            <button class="primary" id="rollBtn">ROLL</button>
+            <button class="secondary" id="copyBtn">Copy</button>
+          </div>
+          <div class="mutedNote">Tip: Add this page as an OBS Browser Source.</div>
+        </div>
+      </div>
+
+      <!-- MISSION -->
+      <div class="card" id="missionCard" style="margin-top:14px;">
+        <div class="cardHeader">
+          <div>
+            <h2>Mission</h2>
+            <div class="sub" id="missionHeadline">Tap ROLL to generate</div>
+          </div>
+          <div class="pill" title="Difficulty only affects missions">Difficulty affects mission only</div>
+        </div>
+
+        <div class="sectionBody" id="missionBody"></div>
+      </div>
+    </div>
+
+    <!-- SIDE -->
+    <div class="side">
+      <div class="card panel">
+        <h3>Mission Difficulty</h3>
+        <div class="sliderBox">
+          <div class="sliderTop">
+            <b id="diffLabel">Easy</b>
+            <span id="diffHint">High completion</span>
+          </div>
+          <input id="diffSlider" type="range" min="0" max="2" step="1" value="0" />
+        </div>
+        <div class="mutedNote">This slider only changes the mission.</div>
+      </div>
+
+      <div class="card panel">
+        <h3>Run Type</h3>
+        <div class="toggle">
+          <div class="tL">
+            <b>Regain Mode</b>
+            <span>Only adds extra loadout items (no mission changes)</span>
+          </div>
+          <div class="switch" id="regainSwitch" data-on="false" role="switch" aria-checked="false"></div>
+        </div>
+      </div>
+
+      <!-- FULL OPTIONS (only when regain is OFF? You asked: regain adds extras, so this shows when regain is ON) -->
+      <div class="card panel" id="fullOptionsCard">
+        <h3>All Loadout Options</h3>
+        <details open>
+          <summary>Show pools</summary>
+          <div class="mutedNote">This shows every option in the generator. (Pure reference for stream.)</div>
+          <div class="optGrid" id="optGrid"></div>
+        </details>
+      </div>
     </div>
   </div>
 
-  <div class="card section" id="allOptions">
-    <h3 style="margin:0 0 6px;">All Loadout Options</h3>
-    <div class="sub">Shown only when Regain is OFF</div>
-    <pre id="optionsText"></pre>
-  </div>
-</div>
-
-</div>
+  <div class="toast" id="toast"></div>
 
 <script>
-// Full pools (like the earlier version) — shown in the right panel only when Regain is OFF.
-const LOADOUT = {
+/**
+ * YOUR RULES (as requested):
+ * 1) Regain ONLY affects loadout by adding extra gear slots.
+ * 2) Missions are NEVER affected by Regain.
+ * 3) "Regain OFF" = looks/behaves like the original (base infil kit + mission).
+ */
+
+// Base infil kit pools (always used)
+const BASE_LOADOUT_POOLS = {
   Primary: [
-    "TAQ-56 (AR)", "M4 (AR)", "Kastov 762 (AR)", "Chimera (AR)", "ISO Hemlock (AR)",
-    "Lachmann Sub (SMG)", "Fennec 45 (SMG)", "Vaznev-9K (SMG)", "BAS-P (SMG)",
-    "Bryson 800 (Shotgun)", "KV Broadside (Shotgun)",
-    "RPK (LMG)", "Sakin MG38 (LMG)",
-    "TAQ-V (BR)", "Lachmann-762 (BR)",
-    "SP-R 208 (Marksman)", "SA-B 50 (Marksman)",
-    "Victus XMR (Sniper)", "MCPR-300 (Sniper)"
+    "TAQ-56 (AR)","M4 (AR)","Kastov 762 (AR)","Chimera (AR)","ISO Hemlock (AR)",
+    "Lachmann Sub (SMG)","Fennec 45 (SMG)","Vaznev-9K (SMG)","BAS-P (SMG)",
+    "Bryson 800 (Shotgun)","KV Broadside (Shotgun)",
+    "RPK (LMG)","Sakin MG38 (LMG)",
+    "TAQ-V (BR)","Lachmann-762 (BR)",
+    "SP-R 208 (Marksman)","SA-B 50 (Marksman)",
+    "Victus XMR (Sniper)","MCPR-300 (Sniper)"
   ],
-  Secondary: [
-    "X13 Auto (Pistol)", "P890 (Pistol)", "X12 (Pistol)", "Basilisk (Pistol)",
-    "Combat Knife (Melee)"
-  ],
-  Tactical: [
-    "Smoke Grenade", "Stun Grenade", "Snapshot Grenade", "Spotter Scope",
-    "Flash Grenade", "Heartbeat Sensor"
-  ],
-  Lethal: [
-    "Semtex", "Drill Charge", "Frag Grenade", "Molotov", "Throwing Knife", "C4"
-  ],
-  Field: [
-    "Munitions Box", "Armor Box", "Trophy System", "Dead Silence"
-  ],
-  Vest: [
-    "2-Plate Vest", "3-Plate Vest", "3-Plate Comms Vest", "3-Plate Medic Vest", "3-Plate Stealth Vest"
-  ],
-  Backpack: [
-    "Small Backpack", "Medium Backpack", "Large Backpack"
-  ],
-  Revive: [
-    "Self-Revive Kit", "Revive Pistol"
-  ],
-  Mask: [
-    "Gas Mask", "Durable Gas Mask", "Radiation Blocker"
-  ]
+  Secondary: ["X13 Auto (Pistol)","P890 (Pistol)","X12 (Pistol)","Basilisk (Pistol)","Combat Knife (Melee)"],
+  Tactical: ["Smoke Grenade","Stun Grenade","Snapshot Grenade","Spotter Scope","Flash Grenade","Heartbeat Sensor"],
+  Lethal: ["Semtex","Drill Charge","Frag Grenade","Molotov","Throwing Knife","C4"],
+  FieldUpgrade: ["Munitions Box","Armor Box","Trophy System","Dead Silence"]
 };
 
-// Missions stay structured (Objective / Approach / Constraint / Bonus)
-const MISSIONS = {
-  easy: [
-    ["Complete 1 contract and exfil", "Pick the closest contract; don’t cross the whole map", "Avoid PvP unless fired upon", "Exfil first available chopper"],
-    ["Clear 1 Stronghold and exfil", "Plates first, clear fast, leave immediately", "No vehicles", "Extract without going down"],
-    ["Loot 1 locked space and exfil", "Commit to one key door, then rotate out", "No UAV Towers", "Extract with full plates"],
-    ["Extract with $20,000+ cash/value", "Stack cash through contracts or loot", "Stay within one POI area", "Extract without dying"]
-  ],
-  normal: [
-    ["Complete 2 contracts and exfil", "Route 2 nearby contracts only", "No Buy Stations", "Extract with full plates"],
-    ["Clear 1 Stronghold + 1 contract", "Stronghold only after plates/ammo are set", "No UAV Towers", "Use only one resupply"],
-    ["Loot 1 locked space + $20,000+", "Hit the lock, then grab quick cash and leave", "No vehicles", "Extract 2 valuables"],
-    ["Extract with $30,000+ cash/value", "Contracts + safes if convenient", "Avoid PvP unless fired upon", "Exfil without using field upgrade"]
-  ],
-  spicy: [
-    ["Complete 3 contracts", "Tight triangle route: contract → contract → exfil", "One weapon only", "Final exfil (if safe)"],
-    ["Clear 2 Strongholds", "Do one, re-plate, then commit to the second", "No vehicles", "No deaths (reset if you die)"],
-    ["Extract with $40,000+ cash/value", "Contracts first, then cash loot", "No Buy Stations", "Extract 3 valuables"],
-    ["Loot 2 locked spaces", "Two locks max, then immediately extract", "No UAV Towers", "Extract without going down"]
-  ]
+// Extra gear pools (ONLY appear when Regain is ON)
+const EXTRA_GEAR_POOLS = {
+  Vest: ["2-Plate Vest","3-Plate Vest","3-Plate Comms Vest","3-Plate Medic Vest","3-Plate Stealth Vest"],
+  Backpack: ["Small Backpack","Medium Backpack","Large Backpack"],
+  Revive: ["Self-Revive Kit","Revive Pistol"],
+  Mask: ["Gas Mask","Durable Gas Mask","Radiation Blocker"]
 };
 
-let regain = false;
+// Missions (Regain does NOT touch these)
+const MISSION_BANK = {
+  easy: {
+    objective: [
+      "Complete 1 contract and exfil",
+      "Clear 1 Stronghold and exfil",
+      "Loot 1 locked space and exfil",
+      "Extract with $20,000+ cash/value",
+      "Extract 3 valuables (any type)"
+    ],
+    approach: [
+      "Pick the closest contract and commit; don’t cross the whole map",
+      "Plates first, then objective. Reset early if it gets messy",
+      "Use smoke for rotations; avoid open crossings when possible",
+      "Route: objective → quick loot → exfil (no greedy detours)",
+      "If the lobby is hot, downshift to survival and take the safe exfil"
+    ],
+    constraint: [
+      "Avoid PvP unless fired upon",
+      "No UAV Towers",
+      "No vehicles",
+      "Stay within one POI area",
+      "No constraint (clean run)"
+    ],
+    bonus: [
+      "Exfil first available chopper",
+      "Extract without going down",
+      "Extract with full plates",
+      "Revive someone before exfil (if possible)",
+      "No bonus (clean run)"
+    ]
+  },
+  normal: {
+    objective: [
+      "Complete 2 contracts and exfil",
+      "Clear 1 Stronghold + complete 1 contract",
+      "Loot 1 locked space + extract $20,000+",
+      "Extract with $30,000+ cash/value",
+      "Extract 5 valuables (any type)"
+    ],
+    approach: [
+      "Run two contracts in nearby POIs; avoid long rotations",
+      "Stronghold only after you have plates/ammo; leave if it’s messy",
+      "Grab the objective items, then instantly rotate to exfil",
+      "If you get into a fight, finish it fast or disengage—no ego",
+      "Use one POI as your base; treat everything else as optional"
+    ],
+    constraint: [
+      "No Buy Stations",
+      "No UAV Towers",
+      "Avoid PvP unless fired upon",
+      "No vehicles",
+      "One weapon only",
+      "Must cross a river/canal at least once"
+    ],
+    bonus: [
+      "Exfil without using a field upgrade",
+      "Extract with at least 2 spare plate stacks",
+      "Use only one ammo resupply (box or station)",
+      "No bonus (clean run)"
+    ]
+  },
+  spicy: {
+    objective: [
+      "Complete 3 contracts",
+      "Clear 2 Strongholds",
+      "Extract with $40,000+ cash/value",
+      "Loot 2 locked spaces",
+      "Acquire any killstreak in-match and exfil with it"
+    ],
+    approach: [
+      "Pick a tight triangle route: contract → contract → exfil",
+      "If you take a fight, commit—don’t bleed plates in a stalemate",
+      "Use rotations + smoke to cross open areas; avoid predictable lines",
+      "If the raid turns chaotic, reset early; don’t throw the run",
+      "Treat final exfil as optional unless it’s clearly safe"
+    ],
+    constraint: [
+      "No Buy Stations",
+      "No UAV Towers",
+      "No vehicles",
+      "One weapon only",
+      "No suppressors",
+      "Avoid PvP unless fired upon"
+    ],
+    bonus: [
+      "Exfil at final chopper (if safe)",
+      "Extract without dying (full run)",
+      "Revive a teammate/operator (if possible)",
+      "No bonus (clean run)"
+    ]
+  }
+};
 
-function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+const ORDER_BASE = ["Primary","Secondary","Tactical","Lethal","FieldUpgrade"];
+const ORDER_EXTRA = ["Vest","Backpack","Revive","Mask"];
 
-function filteredLoadoutPool(key){
-  // Regain makes the generated kit “lighter,” but the full pools panel is hidden anyway.
-  if(!regain) return LOADOUT[key];
+const state = {
+  seed: null,
+  regain: false,
+  difficulty: 0
+};
 
-  // Light regain bias (doesn't change your "all options" list — that list is hidden on regain)
-  if(key === "Vest") return ["2-Plate Vest", "3-Plate Vest"];
-  if(key === "Backpack") return ["Small Backpack", "Medium Backpack"];
-  if(key === "Mask") return ["Gas Mask", "Radiation Blocker"];
-  if(key === "Field") return ["Munitions Box", "Armor Box"];
-  return LOADOUT[key];
+const elSeed = document.getElementById("seedLabel");
+const toast = document.getElementById("toast");
+
+const elLoadoutHeadline = document.getElementById("loadoutHeadline");
+const elMissionHeadline = document.getElementById("missionHeadline");
+
+const elBaseSlots = document.getElementById("baseLoadoutSlots");
+const elExtraWrap = document.getElementById("extraGearWrap");
+const elExtraSlots = document.getElementById("extraLoadoutSlots");
+
+const elMissionBody = document.getElementById("missionBody");
+const diffSlider = document.getElementById("diffSlider");
+const diffLabel = document.getElementById("diffLabel");
+const diffHint = document.getElementById("diffHint");
+
+const elOptGrid = document.getElementById("optGrid");
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"), 1300);
 }
 
-function renderAllLoadoutOptions(){
-  const pre = document.getElementById("optionsText");
-  if(!pre) return;
+function randSeed(){ return Math.random().toString(36).slice(2, 8).toUpperCase(); }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function difficultyKey(){
+  return state.difficulty === 0 ? "easy" : (state.difficulty === 1 ? "normal" : "spicy");
+}
+function updateDifficultyUI(){
+  const labels = ["Easy","Normal","Spicy"];
+  const hints = ["High completion","Balanced","More demanding"];
+  diffLabel.textContent = labels[state.difficulty];
+  diffHint.textContent = hints[state.difficulty];
+  diffSlider.value = String(state.difficulty);
+}
 
-  const lines = [];
-  Object.keys(LOADOUT).forEach(k=>{
-    lines.push(`${k}:`);
-    LOADOUT[k].forEach(item => lines.push(`  • ${item}`));
-    lines.push("");
-  });
+function generateLoadout(){
+  const base = {};
+  for(const k of ORDER_BASE){
+    base[k] = pick(BASE_LOADOUT_POOLS[k]);
+  }
+  const extra = {};
+  if(state.regain){
+    for(const k of ORDER_EXTRA){
+      extra[k] = pick(EXTRA_GEAR_POOLS[k]);
+    }
+  }
+  return { base, extra };
+}
 
-  pre.textContent = lines.join("\n").trim();
+function generateMission(){
+  // IMPORTANT: Regain does NOT affect missions.
+  const key = difficultyKey();
+  const bank = MISSION_BANK[key];
+  return {
+    Objective: pick(bank.objective),
+    Approach: pick(bank.approach),
+    Constraint: pick(bank.constraint),
+    "Optional Bonus": pick(bank.bonus)
+  };
+}
+
+function renderLoadout(loadout){
+  elBaseSlots.innerHTML = ORDER_BASE.map(k=>{
+    return `
+      <div class="slot">
+        <div class="slotTop"><div class="label">${k}</div></div>
+        <div class="value">${escapeHtml(loadout.base[k] ?? "—")}</div>
+      </div>
+    `;
+  }).join("");
+
+  elExtraWrap.classList.toggle("hidden", !state.regain);
+  if(!state.regain){
+    elExtraSlots.innerHTML = "";
+    return;
+  }
+
+  elExtraSlots.innerHTML = ORDER_EXTRA.map(k=>{
+    return `
+      <div class="slot">
+        <div class="slotTop"><div class="label">${k}</div></div>
+        <div class="value">${escapeHtml(loadout.extra[k] ?? "—")}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderMission(m){
+  const lines = [
+    {k:"Objective", hint:"What completes the run."},
+    {k:"Approach", hint:"How to execute it (routing / pace / priorities)."},
+    {k:"Constraint", hint:"Rule that adds tension without being impossible."},
+    {k:"Optional Bonus", hint:"Extra spice only if the raid is calm."}
+  ];
+  elMissionBody.innerHTML = lines.map(x=>{
+    return `
+      <div class="missionLine">
+        <div class="missionKey">${escapeHtml(x.k)}</div>
+        <div class="missionVal">${escapeHtml(m[x.k] ?? "—")}</div>
+        <div class="missionHint">${escapeHtml(x.hint)}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderPools(){
+  // Always show pools as a reference, regardless of regain state.
+  // (If you want this to show ONLY when regain is ON, tell me and I’ll flip one line.)
+  const all = {
+    ...BASE_LOADOUT_POOLS,
+    ...EXTRA_GEAR_POOLS
+  };
+  const keys = Object.keys(all);
+  elOptGrid.innerHTML = keys.map(k=>{
+    const items = all[k].map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+    return `<div class="optBox"><b>${escapeHtml(k)}</b><ul>${items}</ul></div>`;
+  }).join("");
 }
 
 function roll(){
-  // Loadout
-  const grid = document.getElementById("loadoutGrid");
-  grid.innerHTML = "";
+  state.seed = randSeed();
+  elSeed.textContent = `Seed: ${state.seed}`;
 
-  Object.keys(LOADOUT).forEach(k=>{
-    const pool = filteredLoadoutPool(k);
-    const v = pick(pool);
-    grid.innerHTML += `
-      <div class="box">
-        <div class="label">${k}</div>
-        <div class="value">${v}</div>
-      </div>
-    `;
-  });
+  const kit = generateLoadout();
+  const mission = generateMission();
 
-  // Mission (difficulty only affects mission)
-  const d = Number(document.getElementById("difficulty").value || 0);
-  const pool = d === 0 ? MISSIONS.easy : (d === 1 ? MISSIONS.normal : MISSIONS.spicy);
-  const m = pick(pool);
+  elLoadoutHeadline.textContent = `${state.regain ? "Regain ON (Extra Gear Added)" : "Regain OFF (Base Kit Only)"} • ${state.seed}`;
+  elMissionHeadline.textContent = `${["Easy","Normal","Spicy"][state.difficulty]} • ${state.seed}`;
 
-  document.getElementById("missionBox").innerHTML = `
-    <div class="box"><div class="label">Objective</div><div class="value">${m[0]}</div></div>
-    <div class="box" style="margin-top:10px;"><div class="label">Approach</div><div class="value">${m[1]}</div></div>
-    <div class="box" style="margin-top:10px;"><div class="label">Constraint</div><div class="value">${m[2]}</div></div>
-    <div class="box" style="margin-top:10px;"><div class="label">Optional Bonus</div><div class="value">${m[3]}</div></div>
-  `;
-}
-
-function updateDiff(){
-  const d = Number(document.getElementById("difficulty").value || 0);
-  document.getElementById("diffLabel").innerText = ["Easy","Normal","Spicy"][d];
-  // Only reroll mission content when difficulty changes (loadout stays whatever it is until you hit ROLL)
-  // If you want it to instantly change mission on slider move, uncomment next line:
-  roll();
-}
-
-function toggleRegain(){
-  regain = !regain;
-  document.getElementById("regainSwitch").classList.toggle("on", regain);
-
-  // Hide/show full pools section
-  document.getElementById("allOptions").classList.toggle("hidden", regain);
-
-  // If regain is OFF, populate the list (like the original full-options version)
-  if(!regain) renderAllLoadoutOptions();
-
-  // Reroll so the kit reflects regain bias immediately
-  roll();
+  renderLoadout(kit);
+  renderMission(mission);
 }
 
 async function copyText(){
-  const d = Number(document.getElementById("difficulty").value || 0);
-  const diffName = ["Easy","Normal","Spicy"][d];
-  const loadoutLines = [];
-  document.querySelectorAll("#loadoutGrid .box").forEach(b=>{
-    const k = b.querySelector(".label")?.innerText || "";
-    const v = b.querySelector(".value")?.innerText || "";
-    loadoutLines.push(`${k}: ${v}`);
+  const blocks = [];
+  blocks.push(`DMZ GENERATOR — ${state.seed ?? "—"}`);
+  blocks.push(`Regain: ${state.regain ? "ON (Extra Gear Added)" : "OFF (Base Kit Only)"}`);
+  blocks.push(`Mission Difficulty: ${["Easy","Normal","Spicy"][state.difficulty]}`);
+  blocks.push("");
+  blocks.push("LOADOUT (BASE):");
+  for(const k of ORDER_BASE){
+    const v = document.querySelector(`#baseLoadoutSlots .slot:nth-child(${ORDER_BASE.indexOf(k)+1}) .value`)?.innerText || "—";
+    blocks.push(`${k}: ${v}`);
+  }
+  if(state.regain){
+    blocks.push("");
+    blocks.push("LOADOUT (EXTRA GEAR):");
+    for(const k of ORDER_EXTRA){
+      const v = document.querySelector(`#extraLoadoutSlots .slot:nth-child(${ORDER_EXTRA.indexOf(k)+1}) .value`)?.innerText || "—";
+      blocks.push(`${k}: ${v}`);
+    }
+  }
+  blocks.push("");
+  blocks.push("MISSION:");
+  document.querySelectorAll("#missionBody .missionLine").forEach(line=>{
+    const k = line.querySelector(".missionKey")?.innerText || "";
+    const v = line.querySelector(".missionVal")?.innerText || "";
+    if(k && v) blocks.push(`${k}: ${v}`);
   });
 
-  const missionLines = [];
-  document.querySelectorAll("#missionBox .box").forEach(b=>{
-    const k = b.querySelector(".label")?.innerText || "";
-    const v = b.querySelector(".value")?.innerText || "";
-    missionLines.push(`${k}: ${v}`);
-  });
-
-  const text =
-`DMZ GENERATOR
-Regain: ${regain ? "ON" : "OFF"}
-Mission Difficulty: ${diffName}
-
-LOADOUT:
-${loadoutLines.join("\n")}
-
-MISSION:
-${missionLines.join("\n")}`;
+  const text = blocks.join("\n");
 
   try{
     await navigator.clipboard.writeText(text);
+    showToast("Copied");
   }catch{
     const ta = document.createElement("textarea");
     ta.value = text;
@@ -335,13 +659,40 @@ ${missionLines.join("\n")}`;
     ta.select();
     document.execCommand("copy");
     ta.remove();
+    showToast("Copied");
   }
 }
 
-// Init
-renderAllLoadoutOptions();        // show full list on first load (since regain starts OFF)
-document.getElementById("allOptions").classList.toggle("hidden", regain);
-updateDiff();
+function setSwitch(el, on){
+  el.dataset.on = on ? "true" : "false";
+  el.setAttribute("aria-checked", on ? "true" : "false");
+}
+
+function bindRegain(){
+  const el = document.getElementById("regainSwitch");
+  setSwitch(el, state.regain);
+  el.addEventListener("click", ()=>{
+    state.regain = !state.regain;
+    setSwitch(el, state.regain);
+    // Regain should ONLY change loadout visibility/extra gear slots.
+    // Missions are regenerated normally (no special casing).
+    roll();
+  });
+}
+
+document.getElementById("rollBtn").addEventListener("click", roll);
+document.getElementById("copyBtn").addEventListener("click", copyText);
+
+diffSlider.addEventListener("input", ()=>{
+  state.difficulty = parseInt(diffSlider.value, 10) || 0;
+  updateDifficultyUI();
+  // Only reroll to update mission difficulty; loadout will reroll too because you asked for single roll behavior.
+  roll();
+});
+
+updateDifficultyUI();
+bindRegain();
+renderPools();
 roll();
 </script>
 </body>
