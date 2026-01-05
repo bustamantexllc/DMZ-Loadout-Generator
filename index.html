@@ -347,7 +347,7 @@
       <div class="brand">
         <div class="title">
           <h1>DMZ MW2 Loadout + Mission Generator</h1>
-          <p>DMZ (MW2) only • Regain adds extra slots only • Attachments toggle adds random attachments for weapons</p>
+          <p>DMZ (MW2) only • Regain adds extra slots only • Attachments + Solo/Squad toggles affect missions/weapon details only (as labeled)</p>
         </div>
         <div class="pill"><span class="dot"></span><span id="seedLabel">Seed: —</span></div>
       </div>
@@ -393,7 +393,7 @@
             <h2>Mission</h2>
             <div class="sub" id="missionHeadline">Tap ROLL to generate</div>
           </div>
-          <div class="pill" title="Difficulty only affects missions">Difficulty affects mission only</div>
+          <div class="pill" id="modePill" title="Solo/Squad changes mission flavor">Mode: Solo</div>
         </div>
         <div class="sectionBody" id="missionBody"></div>
       </div>
@@ -410,11 +410,11 @@
           </div>
           <input id="diffSlider" type="range" min="0" max="2" step="1" value="0" />
         </div>
-        <div class="mutedNote">Regain/Attachments do not affect missions.</div>
       </div>
 
       <div class="card panel">
-        <h3>Run Type</h3>
+        <h3>Run Settings</h3>
+
         <div class="toggle">
           <div class="tL">
             <b>Regain Mode</b>
@@ -429,6 +429,14 @@
             <span>Adds attachments to Primary/Secondary</span>
           </div>
           <div class="switch" id="attachSwitch" data-on="false" role="switch" aria-checked="false"></div>
+        </div>
+
+        <div class="toggle" style="margin-top:10px;">
+          <div class="tL">
+            <b>Squad Missions</b>
+            <span>Harder missions that require teammates</span>
+          </div>
+          <div class="switch" id="squadSwitch" data-on="false" role="switch" aria-checked="false"></div>
         </div>
 
         <div class="mutedNote" style="margin-top:10px;">
@@ -448,7 +456,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <!-- POOLS MODAL (same page, hidden until "Edit Pools") -->
+  <!-- POOLS MODAL -->
   <div class="modalOverlay" id="modalOverlay" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-label="Edit Pools">
       <div class="modalTop">
@@ -471,9 +479,7 @@
       </div>
 
       <div class="modalActions">
-        <div class="mutedNote" style="margin:0;">
-          After saving, hit <b>ROLL</b> to see changes.
-        </div>
+        <div class="mutedNote" style="margin:0;">After saving, hit <b>ROLL</b> to see changes.</div>
         <div class="btnRow">
           <button class="primary" id="savePoolsBtn">Save Pools</button>
         </div>
@@ -482,32 +488,22 @@
   </div>
 
 <script>
-const STORAGE_KEY = "dmz_mw2_pools_v3";
+const STORAGE_KEY = "dmz_mw2_pools_v4";
 
-/* MW2 DMZ pools (default). You can edit/add anything via Edit Pools. */
+/* Pools (unchanged) */
 const DEFAULT_POOLS = {
   ALL_WEAPONS: [
-    // Assault Rifles
     "M4","TAQ-56","Kastov 762","Lachmann-556","STB 556","M16","Kastov-74u","Kastov 545",
     "M13B","Chimera","ISO Hemlock","Tempus Razorback","FR Avancer","M13C","TR-76 Geist",
-    // Battle Rifles
     "Lachmann-762","SO-14","TAQ-V","FTAC Recon","Cronen Squall",
-    // SMGs
     "VEL 46","MX9","Lachmann Sub","Vaznev-9K","FSS Hurricane","Minibak","PDSW 528","Fennec 45","BAS-P",
     "ISO 45","Lachmann Shroud",
-    // LMGs
     "SAKIN MG38","HCR 56","556 Icarus","RAAL MG","RPK","RAPP H",
-    // Shotguns
     "Lockwood 300","Expedite 12","Bryson 800","Bryson 890","KV Broadside","MX Guardian",
-    // Marksman Rifles
     "EBR-14","SP-R 208","Lockwood MK2","LM-S","SA-B 50","TAQ-M","Crossbow","Tempus Torrent",
-    // Sniper Rifles
     "MCPR-300","Signal 50","LA-B 330","SP-X 80","Victus XMR","FJX Imperium","Carrack .300",
-    // Handguns
     "P890",".50 GS","X12","Basilisk","X13 Auto","FTac Siege","GS Magna","9mm Daemon",
-    // Launchers
     "RPG-7","PILA","JOKR","Strela-P",
-    // Melee / Shield
     "Riot Shield","Combat Knife","Dual Kodachis","Tonfa","Pickaxe","Dual Kamas"
   ],
   TACTICAL: [
@@ -521,8 +517,6 @@ const DEFAULT_POOLS = {
   FIELD_UPGRADE: [
     "Munitions Box","Armor Box","Trophy System","Dead Silence","Recon Drone"
   ],
-
-  // Regain extra slots only:
   VEST: [
     "2-Plate Vest","3-Plate Vest","3-Plate Comms Vest","3-Plate Medic Vest","3-Plate Stealth Vest"
   ],
@@ -531,7 +525,7 @@ const DEFAULT_POOLS = {
   MASK: ["Gas Mask","Durable Gas Mask","Radiation Blocker"]
 };
 
-/* Weapon-type lookup (used only for attachments). If a weapon isn't found, we treat it as "RIFLE" for slots. */
+/* Weapon type lookup for attachments (unchanged) */
 const WEAPON_TYPE = {
   RIFLE: new Set([
     "M4","TAQ-56","Kastov 762","Lachmann-556","STB 556","M16","Kastov-74u","Kastov 545",
@@ -550,7 +544,6 @@ const WEAPON_TYPE = {
   SPECIAL: new Set(["Crossbow"])
 };
 
-/* Attachments pools (MW2-styled). */
 const ATTACH_POOLS = {
   OPTIC: [
     "Cronen Mini Pro","Slimline Pro","VLK 4.0 Optic","Aim OP-V4","SZ Holotherm",
@@ -565,8 +558,7 @@ const ATTACH_POOLS = {
     "XRK Barrel","FTAC Barrel","Hightower Barrel"
   ],
   UNDERBARREL: [
-    "FSS Sharkfin 90","Edge-47 Grip","Commando Foregrip","FTAC Ripper 56","VX Pineapple",
-    "Bipod (if available)"
+    "FSS Sharkfin 90","Edge-47 Grip","Commando Foregrip","FTAC Ripper 56","VX Pineapple","Bipod (if available)"
   ],
   MAGAZINE: [
     "Extended Mag","High Capacity Mag","Fast Mag","Drum Mag (if available)","Small Caliber Mag"
@@ -583,29 +575,22 @@ const ATTACH_POOLS = {
   AMMO: [
     "High Velocity","Armor Piercing","Hollowpoint","Incendiary","Frangible"
   ],
-  BOLT: [
-    "Fast Bolt","Light Bolt","Heavy Bolt"
-  ],
-  GUARD: [
-    "Guard: Tactical","Guard: Heavy","Guard: Lightweight"
-  ],
-  TRIGGER: [
-    "Hair Trigger","Match Trigger","Heavy Trigger","Quickdraw Trigger"
-  ]
+  BOLT: ["Fast Bolt","Light Bolt","Heavy Bolt"],
+  GUARD: ["Guard: Tactical","Guard: Heavy","Guard: Lightweight"],
+  TRIGGER: ["Hair Trigger","Match Trigger","Heavy Trigger","Quickdraw Trigger"]
 };
 
-/* Which attachment slots each weapon type can roll */
 const ATTACH_SLOTS_BY_TYPE = {
   RIFLE: ["OPTIC","MUZZLE","BARREL","UNDERBARREL","MAGAZINE","LASER","STOCK","REAR_GRIP","AMMO"],
   SHOTGUN: ["OPTIC","MUZZLE","BARREL","UNDERBARREL","MAGAZINE","LASER","STOCK","GUARD","AMMO"],
   PISTOL: ["OPTIC","MUZZLE","BARREL","MAGAZINE","LASER","REAR_GRIP","AMMO","TRIGGER"],
   SPECIAL: ["OPTIC","UNDERBARREL","AMMO","BOLT"],
-  LAUNCHER: [],      // no attachments
-  MELEE: []          // no attachments
+  LAUNCHER: [],
+  MELEE: []
 };
 
-/* Missions (Regain/Attachments NEVER touch these) */
-const MISSION_BANK = {
+/* SOLO vs SQUAD missions (SQUAD are harder + teammate-dependent). */
+const SOLO_MISSIONS = {
   easy: {
     objective: [
       "Complete 1 contract and exfil",
@@ -698,10 +683,100 @@ const MISSION_BANK = {
   }
 };
 
+const SQUAD_MISSIONS = {
+  easy: {
+    objective: [
+      "As a squad, complete 2 contracts and exfil together",
+      "Clear 1 Stronghold as a squad and exfil together",
+      "Squad must extract $40,000+ combined value",
+      "Complete 1 contract and exfil with all squad members alive",
+      "Secure 1 locked space and exfil together"
+    ],
+    approach: [
+      "Assign roles: entry (front), support (plates), anchor (rear). Move as a unit",
+      "Call targets and plate breaks—no silent fights",
+      "Rotate together; if one lags, the whole squad slows",
+      "Stack streaks/boxes: one drops munitions, one drops armor",
+      "If engaged, two hold angles while one flanks or smokes"
+    ],
+    constraint: [
+      "Stay within 50 meters of at least one teammate at all times",
+      "No splitting into 1v1 fights (must push as 2+)",
+      "No UAV Towers",
+      "No vehicles",
+      "No Buy Stations"
+    ],
+    bonus: [
+      "Exfil with all three players and no one goes down",
+      "Win one squad fight then immediately exfil",
+      "Extract with 3 spare self-revives across the team",
+      "No bonus (clean run)"
+    ]
+  },
+  normal: {
+    objective: [
+      "Complete 3 contracts as a squad and exfil together",
+      "Clear 2 Strongholds and extract a key item (any valuable) as a team",
+      "Squad must extract $60,000+ combined value",
+      "Acquire a killstreak for each teammate and exfil together",
+      "Complete a contract, then immediately complete a second contract in a different POI"
+    ],
+    approach: [
+      "Use comms discipline: short callouts, confirm downs, confirm wipes",
+      "One player carries smokes; one carries stuns; one carries lethals",
+      "If one gets cracked, rotate and re-plate before re-peeking",
+      "Avoid long looting—objective first, then quick sweep, then rotate",
+      "Two hold, one moves: never all three crossing open ground at once"
+    ],
+    constraint: [
+      "Must revive a teammate at least once (if possible) before exfil",
+      "No Buy Stations",
+      "No UAV Towers",
+      "No vehicles",
+      "Two teammates must use different weapon classes (e.g., SMG + Sniper)"
+    ],
+    bonus: [
+      "Exfil at final chopper (only if safe)",
+      "Extract with all teammates having 3-plates (any kind)",
+      "Complete one hunt-style engagement then disengage and exfil",
+      "No bonus (clean run)"
+    ]
+  },
+  spicy: {
+    objective: [
+      "As a squad, complete 4 contracts OR 3 contracts + 2 Strongholds",
+      "Squad must extract $80,000+ combined value",
+      "Win a full squad fight (wipe) and then complete 2 contracts",
+      "Clear 2 Strongholds, loot 2 locked spaces, and exfil together",
+      "Do a ‘rescue run’: revive another operator team member (assimilation ok) and exfil together"
+    ],
+    approach: [
+      "Run a real execute: entry pair + overwatch. Move on countdowns",
+      "If a fight stalls past 30 seconds, reposition—don’t bleed plates",
+      "Use smokes to cross; use stuns to break corners; finish downs fast",
+      "Always keep one player as anchor watching third-party angles",
+      "Commit to rotations—don’t get baited into endless roof wars"
+    ],
+    constraint: [
+      "No Buy Stations",
+      "No UAV Towers",
+      "No vehicles",
+      "Stay within 40 meters of a teammate at all times",
+      "Must take and win at least one squad engagement before exfil"
+    ],
+    bonus: [
+      "Final exfil (only if safe)",
+      "Extract without any teammate dying (full wipe avoided)",
+      "Extract with 2+ killstreaks across the squad",
+      "No bonus (clean run)"
+    ]
+  }
+};
+
 const ORDER_BASE = ["Primary","Secondary","Tactical","Lethal","Field Upgrade"];
 const ORDER_EXTRA = ["Vest","Backpack","Revive","Mask"];
 
-const state = { seed:null, regain:false, attachments:false, difficulty:0 };
+const state = { seed:null, regain:false, attachments:false, squad:false, difficulty:0 };
 
 const elSeed = document.getElementById("seedLabel");
 const toast = document.getElementById("toast");
@@ -714,6 +789,7 @@ const elMissionBody = document.getElementById("missionBody");
 const diffSlider = document.getElementById("diffSlider");
 const diffLabel = document.getElementById("diffLabel");
 const diffHint = document.getElementById("diffHint");
+const modePill = document.getElementById("modePill");
 
 const modalOverlay = document.getElementById("modalOverlay");
 const modalGrid = document.getElementById("modalGrid");
@@ -738,7 +814,6 @@ function updateDifficultyUI(){
   diffHint.textContent = hints[state.difficulty];
   diffSlider.value = String(state.difficulty);
 }
-
 function normalizeList(text){
   return Array.from(new Set(
     String(text || "")
@@ -779,19 +854,15 @@ function getWeaponType(weaponName){
   if(WEAPON_TYPE.PISTOL.has(weaponName)) return "PISTOL";
   if(WEAPON_TYPE.SPECIAL.has(weaponName)) return "SPECIAL";
   if(WEAPON_TYPE.RIFLE.has(weaponName)) return "RIFLE";
-  return "RIFLE"; // fallback for added weapons via pools editor
+  return "RIFLE";
 }
-
 function rollAttachmentsForWeapon(weaponName){
   const type = getWeaponType(weaponName);
   const slots = ATTACH_SLOTS_BY_TYPE[type] || [];
-  if(!slots.length) return []; // launchers/melee: none
-
-  // Choose 5 distinct slots (or fewer if limited)
+  if(!slots.length) return [];
   const shuffledSlots = slots.slice().sort(()=>Math.random()-0.5);
   const takeN = Math.min(5, shuffledSlots.length);
   const chosenSlots = shuffledSlots.slice(0, takeN);
-
   const att = [];
   for(const slotKey of chosenSlots){
     const pool = ATTACH_POOLS[slotKey] || [];
@@ -800,7 +871,6 @@ function rollAttachmentsForWeapon(weaponName){
   }
   return att;
 }
-
 function niceSlotName(slotKey){
   return ({
     OPTIC:"Optic",
@@ -855,10 +925,10 @@ function generateLoadout(pools){
   return { base, extra, attachments };
 }
 
-/* Mission generation (unchanged by Regain/Attachments) */
+/* Mission generation: SOLO vs SQUAD (squad is harder and teammate dependent). */
 function generateMission(){
   const key = difficultyKey();
-  const bank = MISSION_BANK[key];
+  const bank = state.squad ? SQUAD_MISSIONS[key] : SOLO_MISSIONS[key];
   return {
     Objective: pick(bank.objective),
     Approach: pick(bank.approach),
@@ -918,8 +988,9 @@ function renderLoadout(loadout){
 }
 
 function renderMission(m){
+  const modeLine = state.squad ? "Squad mission (requires teammates)" : "Solo mission";
   const lines = [
-    {k:"Objective", hint:"What completes the run."},
+    {k:"Objective", hint: modeLine},
     {k:"Approach", hint:"How to execute it (routing / pace / priorities)."},
     {k:"Constraint", hint:"Rule that adds tension without being impossible."},
     {k:"Optional Bonus", hint:"Extra spice only if the raid is calm."}
@@ -949,10 +1020,13 @@ function roll(){
   lastRoll = { kit, mission, seed: state.seed };
 
   elLoadoutHeadline.textContent =
-    `${state.regain ? "Regain ON (Extra Slots Added)" : "Regain OFF (Base Kit)"} • ` +
+    `${state.regain ? "Regain ON" : "Regain OFF"} • ` +
     `${state.attachments ? "Attachments ON" : "Attachments OFF"} • ${state.seed}`;
 
-  elMissionHeadline.textContent = `${["Easy","Normal","Spicy"][state.difficulty]} • ${state.seed}`;
+  elMissionHeadline.textContent =
+    `${state.squad ? "Squad" : "Solo"} • ${["Easy","Normal","Spicy"][state.difficulty]} • ${state.seed}`;
+
+  modePill.textContent = `Mode: ${state.squad ? "Squad" : "Solo"}`;
 
   renderLoadout(kit);
   renderMission(mission);
@@ -965,6 +1039,7 @@ async function copyText(){
 
   const blocks = [];
   blocks.push(`DMZ MW2 GENERATOR — ${snapshot.seed ?? "—"}`);
+  blocks.push(`Mode: ${state.squad ? "SQUAD (teammates required)" : "SOLO"}`);
   blocks.push(`Regain: ${state.regain ? "ON (Extra Slots Added)" : "OFF (Base Kit)"}`);
   blocks.push(`Attachments: ${state.attachments ? "ON" : "OFF"}`);
   blocks.push(`Mission Difficulty: ${["Easy","Normal","Spicy"][state.difficulty]}`);
@@ -975,22 +1050,16 @@ async function copyText(){
     blocks.push(`Primary: ${kit.base.Primary}`);
     if(state.attachments){
       const a = kit.attachments?.Primary || [];
-      if(a.length){
-        blocks.push(`Primary Attachments:`);
-        a.forEach(x=>blocks.push(`- ${niceSlotName(x.slot)}: ${x.name}`));
-      }else{
-        blocks.push(`Primary Attachments: None`);
-      }
+      blocks.push(`Primary Attachments:`);
+      if(a.length) a.forEach(x=>blocks.push(`- ${niceSlotName(x.slot)}: ${x.name}`));
+      else blocks.push(`- None`);
     }
     blocks.push(`Secondary: ${kit.base.Secondary}`);
     if(state.attachments){
       const a = kit.attachments?.Secondary || [];
-      if(a.length){
-        blocks.push(`Secondary Attachments:`);
-        a.forEach(x=>blocks.push(`- ${niceSlotName(x.slot)}: ${x.name}`));
-      }else{
-        blocks.push(`Secondary Attachments: None`);
-      }
+      blocks.push(`Secondary Attachments:`);
+      if(a.length) a.forEach(x=>blocks.push(`- ${niceSlotName(x.slot)}: ${x.name}`));
+      else blocks.push(`- None`);
     }
     blocks.push(`Tactical: ${kit.base.Tactical}`);
     blocks.push(`Lethal: ${kit.base.Lethal}`);
@@ -1033,9 +1102,9 @@ function setSwitch(el, on){
   el.setAttribute("aria-checked", on ? "true" : "false");
 }
 
-/* ---- Modal Pools Editor (same page) ---- */
+/* ---- Pools modal ---- */
 const POOL_FIELDS = [
-  ["ALL_WEAPONS","All MW2 Weapons (Primary + Secondary)","Every MW2 weapon can roll here (including RPG-7 / PILA / JOKR / Strela-P). One per line."],
+  ["ALL_WEAPONS","All MW2 Weapons (Primary + Secondary)","Every MW2 weapon can roll here. One per line."],
   ["TACTICAL","Tactical","One per line."],
   ["LETHAL","Lethal","One per line."],
   ["FIELD_UPGRADE","Field Upgrade","One per line."],
@@ -1057,7 +1126,6 @@ function closeModal(){
 function renderPoolsEditor(){
   const pools = getPools();
   modalGrid.innerHTML = "";
-
   for(const [key,title,hint] of POOL_FIELDS){
     const box = document.createElement("div");
     box.className = "poolBox";
@@ -1100,22 +1168,12 @@ document.getElementById("copyBtn").addEventListener("click", copyText);
 
 document.getElementById("editPoolsBtn").addEventListener("click", openModal);
 document.getElementById("closeBtn").addEventListener("click", closeModal);
-document.getElementById("savePoolsBtn").addEventListener("click", ()=>{
-  saveFromEditor();
-  roll();
-});
-document.getElementById("resetBtn").addEventListener("click", ()=>{
-  resetPools();
-  roll();
-});
+document.getElementById("savePoolsBtn").addEventListener("click", ()=>{ saveFromEditor(); roll(); });
+document.getElementById("resetBtn").addEventListener("click", ()=>{ resetPools(); roll(); });
 document.getElementById("copyJsonBtn").addEventListener("click", copyPoolsJson);
 
-modalOverlay.addEventListener("click", (e)=>{
-  if(e.target === modalOverlay) closeModal();
-});
-window.addEventListener("keydown", (e)=>{
-  if(e.key === "Escape" && modalOverlay.classList.contains("show")) closeModal();
-});
+modalOverlay.addEventListener("click", (e)=>{ if(e.target === modalOverlay) closeModal(); });
+window.addEventListener("keydown", (e)=>{ if(e.key === "Escape" && modalOverlay.classList.contains("show")) closeModal(); });
 
 diffSlider.addEventListener("input", ()=>{
   state.difficulty = parseInt(diffSlider.value, 10) || 0;
@@ -1139,6 +1197,14 @@ diffSlider.addEventListener("input", ()=>{
   attachEl.addEventListener("click", ()=>{
     state.attachments = !state.attachments;
     setSwitch(attachEl, state.attachments);
+    roll();
+  });
+
+  const squadEl = document.getElementById("squadSwitch");
+  setSwitch(squadEl, state.squad);
+  squadEl.addEventListener("click", ()=>{
+    state.squad = !state.squad;
+    setSwitch(squadEl, state.squad);
     roll();
   });
 
