@@ -28,6 +28,7 @@ body{
   border:1px solid var(--border);
   border-radius:var(--radius);
   background:rgba(255,255,255,.03);
+  overflow:hidden;
 }
 .header{padding:16px;border-bottom:1px solid var(--border)}
 .header h1{margin:0;font-size:20px}
@@ -41,8 +42,9 @@ body{
   border:1px solid var(--border);
   border-radius:16px;
   padding:10px;
+  background:rgba(255,255,255,.02);
 }
-.label{font-size:11px;color:var(--muted);text-transform:uppercase}
+.label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
 .value{font-size:16px;font-weight:600;margin-top:4px}
 
 button{
@@ -64,20 +66,34 @@ button{
 .controls{display:flex;gap:10px;flex-wrap:wrap;padding:14px;border-top:1px solid var(--border)}
 
 .toggle{
-  display:flex;justify-content:space-between;align-items:center;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
   border:1px solid var(--border);border-radius:16px;padding:10px;
+  background:rgba(255,255,255,.02);
 }
 .switch{
-  width:44px;height:24px;border-radius:999px;background:#333;position:relative;cursor:pointer;
+  width:44px;height:24px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;cursor:pointer;
 }
 .switch::after{
   content:"";width:18px;height:18px;border-radius:50%;
-  background:white;position:absolute;top:3px;left:3px;transition:.2s;
+  background:rgba(255,255,255,.92);position:absolute;top:3px;left:3px;transition:.2s;
 }
-.switch.on{background:var(--accent)}
-.switch.on::after{left:23px}
+.switch.on{background:rgba(107,228,255,.35)}
+.switch.on::after{left:23px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 
 .hidden{display:none}
+
+pre{
+  margin:10px 0 0;
+  padding:10px;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.20);
+  color:rgba(234,241,255,.92);
+  white-space:pre-wrap;
+  word-break:break-word;
+  font-size:12px;
+  line-height:1.4;
+}
 </style>
 </head>
 
@@ -89,18 +105,18 @@ button{
   <div class="card">
     <div class="header">
       <h1>DMZ Loadout + Mission Generator</h1>
-      <div class="sub">Structured missions • regain-aware • stream ready</div>
+      <div class="sub">Loadout in its own section • Mission has details • Regain hides full loadout pools</div>
     </div>
 
     <!-- LOADOUT -->
     <div class="section" id="loadoutSection">
-      <h3>Loadout</h3>
+      <h3 style="margin:0 0 10px;">Loadout</h3>
       <div class="grid" id="loadoutGrid"></div>
     </div>
 
     <!-- MISSION -->
     <div class="section">
-      <h3>Mission</h3>
+      <h3 style="margin:0 0 10px;">Mission</h3>
       <div id="missionBox"></div>
     </div>
 
@@ -114,24 +130,25 @@ button{
 <!-- RIGHT -->
 <div>
   <div class="card section">
-    <h3>Mission Difficulty</h3>
+    <h3 style="margin:0 0 10px;">Mission Difficulty</h3>
     <input type="range" min="0" max="2" value="0" id="difficulty" oninput="updateDiff()">
-    <div class="sub" id="diffLabel">Easy</div>
+    <div class="sub" id="diffLabel" style="margin-top:8px;">Easy</div>
+    <div class="sub" style="margin-top:6px;">Difficulty only affects the mission.</div>
   </div>
 
   <div class="card section">
     <div class="toggle">
       <div>
         <b>Regain Mode</b>
-        <div class="sub">Hides full loadout pools</div>
+        <div class="sub">Hides full loadout option pools</div>
       </div>
       <div id="regainSwitch" class="switch" onclick="toggleRegain()"></div>
     </div>
   </div>
 
   <div class="card section" id="allOptions">
-    <h3>All Loadout Options</h3>
-    <div class="sub">Hidden when Regain is ON</div>
+    <h3 style="margin:0 0 6px;">All Loadout Options</h3>
+    <div class="sub">Shown only when Regain is OFF</div>
     <pre id="optionsText"></pre>
   </div>
 </div>
@@ -139,65 +156,192 @@ button{
 </div>
 
 <script>
-const LOADOUT={
-Primary:["M4","TAQ-56","Kastov 762","ISO Hemlock","Lachmann Sub","Fennec","RPK","MCPR-300"],
-Secondary:["X12","P890","Basilisk","Combat Knife"],
-Tactical:["Smoke","Stun","Snapshot","Spotter Scope"],
-Lethal:["Semtex","Frag","Throwing Knife","Drill Charge"],
-Field:["Munitions Box","Armor Box"],
-Vest:["2-Plate","3-Plate","Comms","Medic","Stealth"],
-Backpack:["Small","Medium","Large"]
+// Full pools (like the earlier version) — shown in the right panel only when Regain is OFF.
+const LOADOUT = {
+  Primary: [
+    "TAQ-56 (AR)", "M4 (AR)", "Kastov 762 (AR)", "Chimera (AR)", "ISO Hemlock (AR)",
+    "Lachmann Sub (SMG)", "Fennec 45 (SMG)", "Vaznev-9K (SMG)", "BAS-P (SMG)",
+    "Bryson 800 (Shotgun)", "KV Broadside (Shotgun)",
+    "RPK (LMG)", "Sakin MG38 (LMG)",
+    "TAQ-V (BR)", "Lachmann-762 (BR)",
+    "SP-R 208 (Marksman)", "SA-B 50 (Marksman)",
+    "Victus XMR (Sniper)", "MCPR-300 (Sniper)"
+  ],
+  Secondary: [
+    "X13 Auto (Pistol)", "P890 (Pistol)", "X12 (Pistol)", "Basilisk (Pistol)",
+    "Combat Knife (Melee)"
+  ],
+  Tactical: [
+    "Smoke Grenade", "Stun Grenade", "Snapshot Grenade", "Spotter Scope",
+    "Flash Grenade", "Heartbeat Sensor"
+  ],
+  Lethal: [
+    "Semtex", "Drill Charge", "Frag Grenade", "Molotov", "Throwing Knife", "C4"
+  ],
+  Field: [
+    "Munitions Box", "Armor Box", "Trophy System", "Dead Silence"
+  ],
+  Vest: [
+    "2-Plate Vest", "3-Plate Vest", "3-Plate Comms Vest", "3-Plate Medic Vest", "3-Plate Stealth Vest"
+  ],
+  Backpack: [
+    "Small Backpack", "Medium Backpack", "Large Backpack"
+  ],
+  Revive: [
+    "Self-Revive Kit", "Revive Pistol"
+  ],
+  Mask: [
+    "Gas Mask", "Durable Gas Mask", "Radiation Blocker"
+  ]
 };
 
-const MISSIONS={
-easy:[
-["Complete 1 contract","Stay within one POI","Avoid PvP unless fired upon","Exfil first chopper"],
-["Clear 1 Stronghold","Plates first, loot fast","No vehicles","No downs"]
-],
-normal:[
-["Complete 2 contracts","Route nearby objectives","No Buy Stations","Exfil with full plates"],
-["Loot 1 locked space","Smoke rotations","No UAV Towers","Extract valuables"]
-],
-spicy:[
-["Complete 3 contracts","Fast rotations","One weapon only","Final exfil"],
-["Loot 2 locked spaces","Commit fights","No vehicles","No deaths"]
-]
+// Missions stay structured (Objective / Approach / Constraint / Bonus)
+const MISSIONS = {
+  easy: [
+    ["Complete 1 contract and exfil", "Pick the closest contract; don’t cross the whole map", "Avoid PvP unless fired upon", "Exfil first available chopper"],
+    ["Clear 1 Stronghold and exfil", "Plates first, clear fast, leave immediately", "No vehicles", "Extract without going down"],
+    ["Loot 1 locked space and exfil", "Commit to one key door, then rotate out", "No UAV Towers", "Extract with full plates"],
+    ["Extract with $20,000+ cash/value", "Stack cash through contracts or loot", "Stay within one POI area", "Extract without dying"]
+  ],
+  normal: [
+    ["Complete 2 contracts and exfil", "Route 2 nearby contracts only", "No Buy Stations", "Extract with full plates"],
+    ["Clear 1 Stronghold + 1 contract", "Stronghold only after plates/ammo are set", "No UAV Towers", "Use only one resupply"],
+    ["Loot 1 locked space + $20,000+", "Hit the lock, then grab quick cash and leave", "No vehicles", "Extract 2 valuables"],
+    ["Extract with $30,000+ cash/value", "Contracts + safes if convenient", "Avoid PvP unless fired upon", "Exfil without using field upgrade"]
+  ],
+  spicy: [
+    ["Complete 3 contracts", "Tight triangle route: contract → contract → exfil", "One weapon only", "Final exfil (if safe)"],
+    ["Clear 2 Strongholds", "Do one, re-plate, then commit to the second", "No vehicles", "No deaths (reset if you die)"],
+    ["Extract with $40,000+ cash/value", "Contracts first, then cash loot", "No Buy Stations", "Extract 3 valuables"],
+    ["Loot 2 locked spaces", "Two locks max, then immediately extract", "No UAV Towers", "Extract without going down"]
+  ]
 };
 
-let regain=false;
+let regain = false;
 
-function roll(){
-  const grid=document.getElementById("loadoutGrid");
-  grid.innerHTML="";
+function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+function filteredLoadoutPool(key){
+  // Regain makes the generated kit “lighter,” but the full pools panel is hidden anyway.
+  if(!regain) return LOADOUT[key];
+
+  // Light regain bias (doesn't change your "all options" list — that list is hidden on regain)
+  if(key === "Vest") return ["2-Plate Vest", "3-Plate Vest"];
+  if(key === "Backpack") return ["Small Backpack", "Medium Backpack"];
+  if(key === "Mask") return ["Gas Mask", "Radiation Blocker"];
+  if(key === "Field") return ["Munitions Box", "Armor Box"];
+  return LOADOUT[key];
+}
+
+function renderAllLoadoutOptions(){
+  const pre = document.getElementById("optionsText");
+  if(!pre) return;
+
+  const lines = [];
   Object.keys(LOADOUT).forEach(k=>{
-    const v=LOADOUT[k][Math.floor(Math.random()*LOADOUT[k].length)];
-    grid.innerHTML+=`<div class="box"><div class="label">${k}</div><div class="value">${v}</div></div>`;
+    lines.push(`${k}:`);
+    LOADOUT[k].forEach(item => lines.push(`  • ${item}`));
+    lines.push("");
   });
 
-  const d=document.getElementById("difficulty").value;
-  const pool=d==0?MISSIONS.easy:d==1?MISSIONS.normal:MISSIONS.spicy;
-  const m=pool[Math.floor(Math.random()*pool.length)];
-  document.getElementById("missionBox").innerHTML=`
-    <div class="box"><b>Objective:</b> ${m[0]}</div>
-    <div class="box"><b>Approach:</b> ${m[1]}</div>
-    <div class="box"><b>Constraint:</b> ${m[2]}</div>
-    <div class="box"><b>Bonus:</b> ${m[3]}</div>
+  pre.textContent = lines.join("\n").trim();
+}
+
+function roll(){
+  // Loadout
+  const grid = document.getElementById("loadoutGrid");
+  grid.innerHTML = "";
+
+  Object.keys(LOADOUT).forEach(k=>{
+    const pool = filteredLoadoutPool(k);
+    const v = pick(pool);
+    grid.innerHTML += `
+      <div class="box">
+        <div class="label">${k}</div>
+        <div class="value">${v}</div>
+      </div>
+    `;
+  });
+
+  // Mission (difficulty only affects mission)
+  const d = Number(document.getElementById("difficulty").value || 0);
+  const pool = d === 0 ? MISSIONS.easy : (d === 1 ? MISSIONS.normal : MISSIONS.spicy);
+  const m = pick(pool);
+
+  document.getElementById("missionBox").innerHTML = `
+    <div class="box"><div class="label">Objective</div><div class="value">${m[0]}</div></div>
+    <div class="box" style="margin-top:10px;"><div class="label">Approach</div><div class="value">${m[1]}</div></div>
+    <div class="box" style="margin-top:10px;"><div class="label">Constraint</div><div class="value">${m[2]}</div></div>
+    <div class="box" style="margin-top:10px;"><div class="label">Optional Bonus</div><div class="value">${m[3]}</div></div>
   `;
 }
 
 function updateDiff(){
-  document.getElementById("diffLabel").innerText=["Easy","Normal","Spicy"][difficulty.value];
+  const d = Number(document.getElementById("difficulty").value || 0);
+  document.getElementById("diffLabel").innerText = ["Easy","Normal","Spicy"][d];
+  // Only reroll mission content when difficulty changes (loadout stays whatever it is until you hit ROLL)
+  // If you want it to instantly change mission on slider move, uncomment next line:
+  roll();
 }
 
 function toggleRegain(){
-  regain=!regain;
-  document.getElementById("regainSwitch").classList.toggle("on");
-  document.getElementById("allOptions").classList.toggle("hidden",regain);
+  regain = !regain;
+  document.getElementById("regainSwitch").classList.toggle("on", regain);
+
+  // Hide/show full pools section
+  document.getElementById("allOptions").classList.toggle("hidden", regain);
+
+  // If regain is OFF, populate the list (like the original full-options version)
+  if(!regain) renderAllLoadoutOptions();
+
+  // Reroll so the kit reflects regain bias immediately
+  roll();
 }
 
-function copyText(){
-  navigator.clipboard.writeText(document.body.innerText);
+async function copyText(){
+  const d = Number(document.getElementById("difficulty").value || 0);
+  const diffName = ["Easy","Normal","Spicy"][d];
+  const loadoutLines = [];
+  document.querySelectorAll("#loadoutGrid .box").forEach(b=>{
+    const k = b.querySelector(".label")?.innerText || "";
+    const v = b.querySelector(".value")?.innerText || "";
+    loadoutLines.push(`${k}: ${v}`);
+  });
+
+  const missionLines = [];
+  document.querySelectorAll("#missionBox .box").forEach(b=>{
+    const k = b.querySelector(".label")?.innerText || "";
+    const v = b.querySelector(".value")?.innerText || "";
+    missionLines.push(`${k}: ${v}`);
+  });
+
+  const text =
+`DMZ GENERATOR
+Regain: ${regain ? "ON" : "OFF"}
+Mission Difficulty: ${diffName}
+
+LOADOUT:
+${loadoutLines.join("\n")}
+
+MISSION:
+${missionLines.join("\n")}`;
+
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch{
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
 }
+
+// Init
+renderAllLoadoutOptions();        // show full list on first load (since regain starts OFF)
+document.getElementById("allOptions").classList.toggle("hidden", regain);
+updateDiff();
 roll();
 </script>
 </body>
