@@ -347,7 +347,7 @@
       <div class="brand">
         <div class="title">
           <h1>DMZ MW2 Loadout + Mission Generator</h1>
-          <p>DMZ (MW2) only • Regain adds extra slots only • Attachments + Solo/Squad toggles affect missions/weapon details only (as labeled)</p>
+          <p>DMZ (MW2) only • Regain adds extra slots only • Attachments toggle adds random attachments for weapons • Solo/Squad affects missions</p>
         </div>
         <div class="pill"><span class="dot"></span><span id="seedLabel">Seed: —</span></div>
       </div>
@@ -359,13 +359,13 @@
             <h2>Loadout</h2>
             <div class="sub" id="loadoutHeadline">Tap ROLL to generate</div>
           </div>
-          <div class="pill" title="Primary + Secondary draw from ALL MW2 weapons (including RPG-7)">Every MW2 weapon enabled</div>
+          <div class="pill" title="Primary is full weapon pool. Secondary is limited (handguns/launchers/melee).">Secondary is limited</div>
         </div>
 
         <div class="sectionBody">
           <div class="mutedNote" style="margin-bottom:10px;">
-            <b>Base Infil Kit</b> always rolls. <b>Regain Mode</b> adds Vest/Backpack/Revive/Mask slots only.
-            <br><b>Random Attachments</b> adds attachments to Primary/Secondary.
+            <b>Primary</b> rolls from the full MW2 weapon pool.<br>
+            <b>Secondary</b> rolls only from <b>handguns / launchers / melee</b> (editable in Pools).
           </div>
 
           <div class="grid2" id="baseLoadoutSlots"></div>
@@ -410,6 +410,7 @@
           </div>
           <input id="diffSlider" type="range" min="0" max="2" step="1" value="0" />
         </div>
+        <div class="mutedNote">Difficulty only affects missions.</div>
       </div>
 
       <div class="card panel">
@@ -440,7 +441,7 @@
         </div>
 
         <div class="mutedNote" style="margin-top:10px;">
-          If you notice a missing weapon, hit <b>Edit Pools</b> and paste it in.
+          Want a different “secondary ruleset”? Edit the Secondary pool in <b>Edit Pools</b>.
         </div>
       </div>
 
@@ -488,22 +489,37 @@
   </div>
 
 <script>
-const STORAGE_KEY = "dmz_mw2_pools_v4";
+const STORAGE_KEY = "dmz_mw2_pools_v5_secondary_fixed";
 
-/* Pools (unchanged) */
+/* DEFAULT POOLS
+   - PRIMARY_WEAPONS: full pool for primary slot
+   - SECONDARY_WEAPONS: LIMITED pool (handguns/launchers/melee) for secondary slot
+*/
 const DEFAULT_POOLS = {
-  ALL_WEAPONS: [
+  PRIMARY_WEAPONS: [
+    // Assault Rifles
     "M4","TAQ-56","Kastov 762","Lachmann-556","STB 556","M16","Kastov-74u","Kastov 545",
     "M13B","Chimera","ISO Hemlock","Tempus Razorback","FR Avancer","M13C","TR-76 Geist",
+    // Battle Rifles
     "Lachmann-762","SO-14","TAQ-V","FTAC Recon","Cronen Squall",
+    // SMGs
     "VEL 46","MX9","Lachmann Sub","Vaznev-9K","FSS Hurricane","Minibak","PDSW 528","Fennec 45","BAS-P",
     "ISO 45","Lachmann Shroud",
+    // LMGs
     "SAKIN MG38","HCR 56","556 Icarus","RAAL MG","RPK","RAPP H",
+    // Shotguns
     "Lockwood 300","Expedite 12","Bryson 800","Bryson 890","KV Broadside","MX Guardian",
+    // Marksman
     "EBR-14","SP-R 208","Lockwood MK2","LM-S","SA-B 50","TAQ-M","Crossbow","Tempus Torrent",
-    "MCPR-300","Signal 50","LA-B 330","SP-X 80","Victus XMR","FJX Imperium","Carrack .300",
+    // Snipers
+    "MCPR-300","Signal 50","LA-B 330","SP-X 80","Victus XMR","FJX Imperium","Carrack .300"
+  ],
+  SECONDARY_WEAPONS: [
+    // Handguns
     "P890",".50 GS","X12","Basilisk","X13 Auto","FTac Siege","GS Magna","9mm Daemon",
+    // Launchers
     "RPG-7","PILA","JOKR","Strela-P",
+    // Melee / Shield
     "Riot Shield","Combat Knife","Dual Kodachis","Tonfa","Pickaxe","Dual Kamas"
   ],
   TACTICAL: [
@@ -525,17 +541,11 @@ const DEFAULT_POOLS = {
   MASK: ["Gas Mask","Durable Gas Mask","Radiation Blocker"]
 };
 
-/* Weapon type lookup for attachments (unchanged) */
+/* Weapon type lookup for attachments */
 const WEAPON_TYPE = {
   RIFLE: new Set([
-    "M4","TAQ-56","Kastov 762","Lachmann-556","STB 556","M16","Kastov-74u","Kastov 545",
-    "M13B","Chimera","ISO Hemlock","Tempus Razorback","FR Avancer","M13C","TR-76 Geist",
-    "Lachmann-762","SO-14","TAQ-V","FTAC Recon","Cronen Squall",
-    "VEL 46","MX9","Lachmann Sub","Vaznev-9K","FSS Hurricane","Minibak","PDSW 528","Fennec 45","BAS-P",
-    "ISO 45","Lachmann Shroud",
-    "SAKIN MG38","HCR 56","556 Icarus","RAAL MG","RPK","RAPP H",
-    "EBR-14","SP-R 208","Lockwood MK2","LM-S","SA-B 50","TAQ-M","Tempus Torrent",
-    "MCPR-300","Signal 50","LA-B 330","SP-X 80","Victus XMR","FJX Imperium","Carrack .300"
+    // (Primary pool types)
+    ...DEFAULT_POOLS.PRIMARY_WEAPONS
   ]),
   SHOTGUN: new Set(["Lockwood 300","Expedite 12","Bryson 800","Bryson 890","KV Broadside","MX Guardian"]),
   PISTOL: new Set(["P890",".50 GS","X12","Basilisk","X13 Auto","FTac Siege","GS Magna","9mm Daemon"]),
@@ -589,7 +599,7 @@ const ATTACH_SLOTS_BY_TYPE = {
   MELEE: []
 };
 
-/* SOLO vs SQUAD missions (SQUAD are harder + teammate-dependent). */
+/* SOLO vs SQUAD missions */
 const SOLO_MISSIONS = {
   easy: {
     objective: [
@@ -827,6 +837,12 @@ function loadPools(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(!raw) return structuredClone(DEFAULT_POOLS);
     const parsed = JSON.parse(raw);
+
+    // Back-compat: if someone had ALL_WEAPONS saved from an older version, map it into PRIMARY_WEAPONS.
+    if(parsed && Array.isArray(parsed.ALL_WEAPONS) && (!parsed.PRIMARY_WEAPONS || !Array.isArray(parsed.PRIMARY_WEAPONS))){
+      parsed.PRIMARY_WEAPONS = parsed.ALL_WEAPONS;
+    }
+
     const merged = { ...structuredClone(DEFAULT_POOLS), ...parsed };
     for(const k of Object.keys(merged)){
       if(!Array.isArray(merged[k])) merged[k] = [];
@@ -854,7 +870,7 @@ function getWeaponType(weaponName){
   if(WEAPON_TYPE.PISTOL.has(weaponName)) return "PISTOL";
   if(WEAPON_TYPE.SPECIAL.has(weaponName)) return "SPECIAL";
   if(WEAPON_TYPE.RIFLE.has(weaponName)) return "RIFLE";
-  return "RIFLE";
+  return "RIFLE"; // fallback for any custom-added weapons
 }
 function rollAttachmentsForWeapon(weaponName){
   const type = getWeaponType(weaponName);
@@ -888,17 +904,13 @@ function niceSlotName(slotKey){
   })[slotKey] || slotKey;
 }
 
-/* Loadout generation */
+/* Loadout generation (Primary + true Secondary pool) */
 function generateLoadout(pools){
-  const allWeapons = pools.ALL_WEAPONS ?? [];
-  const primary = pick(allWeapons) || "—";
+  const primaryPool = pools.PRIMARY_WEAPONS ?? [];
+  const secondaryPool = pools.SECONDARY_WEAPONS ?? [];
 
-  let secondary = pick(allWeapons) || "—";
-  if(allWeapons.length > 1){
-    while(secondary === primary){
-      secondary = pick(allWeapons) || "—";
-    }
-  }
+  const primary = pick(primaryPool) || "—";
+  const secondary = pick(secondaryPool) || "—";
 
   const base = {
     Primary: primary,
@@ -925,7 +937,7 @@ function generateLoadout(pools){
   return { base, extra, attachments };
 }
 
-/* Mission generation: SOLO vs SQUAD (squad is harder and teammate dependent). */
+/* Mission generation */
 function generateMission(){
   const key = difficultyKey();
   const bank = state.squad ? SQUAD_MISSIONS[key] : SOLO_MISSIONS[key];
@@ -1104,7 +1116,8 @@ function setSwitch(el, on){
 
 /* ---- Pools modal ---- */
 const POOL_FIELDS = [
-  ["ALL_WEAPONS","All MW2 Weapons (Primary + Secondary)","Every MW2 weapon can roll here. One per line."],
+  ["PRIMARY_WEAPONS","Primary Weapons (full pool)","Everything you want eligible for PRIMARY. One per line."],
+  ["SECONDARY_WEAPONS","Secondary Weapons (limited)","Only items eligible for SECONDARY (handguns/launchers/melee). One per line."],
   ["TACTICAL","Tactical","One per line."],
   ["LETHAL","Lethal","One per line."],
   ["FIELD_UPGRADE","Field Upgrade","One per line."],
