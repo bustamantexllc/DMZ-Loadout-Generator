@@ -7,107 +7,49 @@
 
 <style>
 :root{
-  --bg0:#070A12;
-  --bg1:#0B1220;
-  --text:#EAF1FF;
-  --muted:#A9B7D6;
-  --accent:#6BE4FF;
-  --accent2:#9B7CFF;
+  --bg0:#070A12; --bg1:#0B1220;
+  --text:#EAF1FF; --muted:#A9B7D6;
+  --accent:#6BE4FF; --accent2:#9B7CFF;
   --border:rgba(255,255,255,.10);
-  --shadow:0 20px 60px rgba(0,0,0,.55);
   --radius:22px;
 }
 *{box-sizing:border-box}
 body{
   margin:0;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
   color:var(--text);
-  background:
-    radial-gradient(1200px 800px at 20% -10%, rgba(155,124,255,.25), transparent 60%),
-    radial-gradient(900px 700px at 100% 20%, rgba(107,228,255,.18), transparent 55%),
-    linear-gradient(180deg,var(--bg0),var(--bg1));
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  padding:22px;
+  background:linear-gradient(180deg,var(--bg0),var(--bg1));
+  padding:20px;
 }
-.wrap{
-  width:min(1100px,100%);
-  display:grid;
-  gap:18px;
-  grid-template-columns:1.25fr .75fr;
-}
-@media(max-width:960px){.wrap{grid-template-columns:1fr}}
-
-.brand{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:14px 16px;border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
-  box-shadow:var(--shadow);
-}
-.title h1{margin:0;font-size:18px}
-.title p{margin:4px 0 0;color:var(--muted);font-size:13px}
-
-.pill{
-  font-size:12px;padding:8px 10px;border-radius:999px;
-  border:1px solid var(--border);
-  background:rgba(255,255,255,.03);color:var(--muted);
-}
-
-.tabs{margin-top:14px;display:flex;gap:10px}
-.tab{
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:999px;padding:10px 12px;
-  font-size:13px;font-weight:600;
-  background:rgba(255,255,255,.03);
-  color:var(--muted);cursor:pointer;
-}
-.tab[data-active="true"]{
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  color:#061018;border:none;
-}
+.wrap{max-width:1100px;margin:auto;display:grid;gap:18px;grid-template-columns:1.2fr .8fr}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
 
 .card{
   border:1px solid var(--border);
   border-radius:var(--radius);
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
-  box-shadow:var(--shadow);
-  overflow:hidden;
-  margin-top:14px;
-}
-.cardHeader{
-  padding:16px;border-bottom:1px solid rgba(255,255,255,.08);
-}
-.cardHeader h2{margin:0;font-size:14px;color:var(--muted)}
-.cardHeader .sub{margin-top:6px;font-size:18px;font-weight:600}
-
-.grid{
-  padding:14px;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-@media(max-width:560px){.grid{grid-template-columns:1fr}}
-
-.slot{
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:18px;
-  padding:12px;
   background:rgba(255,255,255,.03);
 }
-.label{font-size:12px;color:var(--muted)}
-.value{margin-top:6px;font-size:16px;font-weight:600}
+.header{padding:16px;border-bottom:1px solid var(--border)}
+.header h1{margin:0;font-size:20px}
+.sub{color:var(--muted);font-size:13px}
 
-.controls{
-  padding:14px;
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
+.section{padding:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+
+.box{
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:10px;
 }
+.label{font-size:11px;color:var(--muted);text-transform:uppercase}
+.value{font-size:16px;font-weight:600;margin-top:4px}
+
 button{
-  border:none;border-radius:14px;
-  padding:10px 14px;font-weight:600;
+  border:none;
+  border-radius:14px;
+  padding:10px 14px;
+  font-weight:700;
   cursor:pointer;
 }
 .primary{
@@ -115,107 +57,146 @@ button{
   color:#061018;
 }
 .secondary{
-  background:rgba(255,255,255,.06);
+  background:rgba(255,255,255,.05);
   color:var(--text);
-  border:1px solid var(--border);
 }
-.side{display:flex;flex-direction:column;gap:18px}
-.panel{padding:14px}
-.small{font-size:12px;color:var(--muted)}
+
+.controls{display:flex;gap:10px;flex-wrap:wrap;padding:14px;border-top:1px solid var(--border)}
+
+.toggle{
+  display:flex;justify-content:space-between;align-items:center;
+  border:1px solid var(--border);border-radius:16px;padding:10px;
+}
+.switch{
+  width:44px;height:24px;border-radius:999px;background:#333;position:relative;cursor:pointer;
+}
+.switch::after{
+  content:"";width:18px;height:18px;border-radius:50%;
+  background:white;position:absolute;top:3px;left:3px;transition:.2s;
+}
+.switch.on{background:var(--accent)}
+.switch.on::after{left:23px}
+
+.hidden{display:none}
 </style>
 </head>
 
 <body>
 <div class="wrap">
 
+<!-- LEFT -->
 <div>
-  <div class="brand">
-    <div class="title">
-      <h1>DMZ Loadout + Mission Generator</h1>
-      <p>DMZ-legal • realistic missions • stream-ready</p>
-    </div>
-    <div class="pill" id="seed">Seed: —</div>
-  </div>
-
-  <div class="tabs">
-    <div class="tab" data-active="true">Combo</div>
-  </div>
-
   <div class="card">
-    <div class="cardHeader">
-      <h2>Current Roll</h2>
-      <div class="sub" id="headline">Tap ROLL</div>
+    <div class="header">
+      <h1>DMZ Loadout + Mission Generator</h1>
+      <div class="sub">Structured missions • regain-aware • stream ready</div>
     </div>
-    <div class="grid" id="grid"></div>
+
+    <!-- LOADOUT -->
+    <div class="section" id="loadoutSection">
+      <h3>Loadout</h3>
+      <div class="grid" id="loadoutGrid"></div>
+    </div>
+
+    <!-- MISSION -->
+    <div class="section">
+      <h3>Mission</h3>
+      <div id="missionBox"></div>
+    </div>
+
     <div class="controls">
       <button class="primary" onclick="roll()">ROLL</button>
-      <button class="secondary" onclick="copy()">Copy</button>
+      <button class="secondary" onclick="copyText()">COPY</button>
     </div>
   </div>
 </div>
 
-<div class="side">
-  <div class="card panel">
-    <h3>Difficulty</h3>
-    <select id="difficulty" onchange="roll()">
-      <option value="easy">Easy</option>
-      <option value="normal">Normal</option>
-      <option value="spicy">Spicy</option>
-    </select>
-    <p class="small">Easy = high completion</p>
+<!-- RIGHT -->
+<div>
+  <div class="card section">
+    <h3>Mission Difficulty</h3>
+    <input type="range" min="0" max="2" value="0" id="difficulty" oninput="updateDiff()">
+    <div class="sub" id="diffLabel">Easy</div>
   </div>
 
-  <div class="card panel">
-    <h3>Regain Mode</h3>
-    <input type="checkbox" id="regain" onchange="roll()"> Enable
+  <div class="card section">
+    <div class="toggle">
+      <div>
+        <b>Regain Mode</b>
+        <div class="sub">Hides full loadout pools</div>
+      </div>
+      <div id="regainSwitch" class="switch" onclick="toggleRegain()"></div>
+    </div>
   </div>
 
-  <div class="card panel">
-    <h3>Hardcore</h3>
-    <input type="checkbox" id="hardcore" onchange="roll()"> Enable
+  <div class="card section" id="allOptions">
+    <h3>All Loadout Options</h3>
+    <div class="sub">Hidden when Regain is ON</div>
+    <pre id="optionsText"></pre>
   </div>
 </div>
 
 </div>
 
 <script>
-const loadout={
-Primary:["M4","TAQ-56","ISO Hemlock","Kastov 762"],
-Secondary:["X13 Auto","P890","Combat Knife"],
-Tactical:["Smoke","Stun","Spotter Scope"],
-Lethal:["Semtex","Drill Charge","Frag"],
-Vest:["2-Plate","3-Plate"],
+const LOADOUT={
+Primary:["M4","TAQ-56","Kastov 762","ISO Hemlock","Lachmann Sub","Fennec","RPK","MCPR-300"],
+Secondary:["X12","P890","Basilisk","Combat Knife"],
+Tactical:["Smoke","Stun","Snapshot","Spotter Scope"],
+Lethal:["Semtex","Frag","Throwing Knife","Drill Charge"],
+Field:["Munitions Box","Armor Box"],
+Vest:["2-Plate","3-Plate","Comms","Medic","Stealth"],
 Backpack:["Small","Medium","Large"]
 };
 
-const missions={
-easy:["Complete 1 contract","Extract $20k","Clear 1 Stronghold"],
-normal:["Complete 2 contracts","Extract $30k","Loot locked space"],
-spicy:["Complete 3 contracts","Clear 2 Strongholds","Extract $40k"]
+const MISSIONS={
+easy:[
+["Complete 1 contract","Stay within one POI","Avoid PvP unless fired upon","Exfil first chopper"],
+["Clear 1 Stronghold","Plates first, loot fast","No vehicles","No downs"]
+],
+normal:[
+["Complete 2 contracts","Route nearby objectives","No Buy Stations","Exfil with full plates"],
+["Loot 1 locked space","Smoke rotations","No UAV Towers","Extract valuables"]
+],
+spicy:[
+["Complete 3 contracts","Fast rotations","One weapon only","Final exfil"],
+["Loot 2 locked spaces","Commit fights","No vehicles","No deaths"]
+]
 };
 
-function rand(a){return a[Math.floor(Math.random()*a.length)]}
+let regain=false;
 
 function roll(){
-  const seed=Math.random().toString(36).slice(2,8).toUpperCase();
-  document.getElementById("seed").textContent="Seed: "+seed;
-  document.getElementById("headline").textContent="Good luck";
-
-  const grid=document.getElementById("grid");
+  const grid=document.getElementById("loadoutGrid");
   grid.innerHTML="";
-
-  Object.keys(loadout).forEach(k=>{
-    grid.innerHTML+=`<div class="slot"><div class="label">${k}</div><div class="value">${rand(loadout[k])}</div></div>`;
+  Object.keys(LOADOUT).forEach(k=>{
+    const v=LOADOUT[k][Math.floor(Math.random()*LOADOUT[k].length)];
+    grid.innerHTML+=`<div class="box"><div class="label">${k}</div><div class="value">${v}</div></div>`;
   });
 
-  const diff=document.getElementById("difficulty").value;
-  grid.innerHTML+=`<div class="slot"><div class="label">Mission</div><div class="value">${rand(missions[diff])}</div></div>`;
+  const d=document.getElementById("difficulty").value;
+  const pool=d==0?MISSIONS.easy:d==1?MISSIONS.normal:MISSIONS.spicy;
+  const m=pool[Math.floor(Math.random()*pool.length)];
+  document.getElementById("missionBox").innerHTML=`
+    <div class="box"><b>Objective:</b> ${m[0]}</div>
+    <div class="box"><b>Approach:</b> ${m[1]}</div>
+    <div class="box"><b>Constraint:</b> ${m[2]}</div>
+    <div class="box"><b>Bonus:</b> ${m[3]}</div>
+  `;
 }
 
-function copy(){
-  let t="DMZ LOADOUT\n";
-  document.querySelectorAll(".slot").forEach(s=>t+=s.innerText+"\n");
-  navigator.clipboard.writeText(t);
+function updateDiff(){
+  document.getElementById("diffLabel").innerText=["Easy","Normal","Spicy"][difficulty.value];
+}
+
+function toggleRegain(){
+  regain=!regain;
+  document.getElementById("regainSwitch").classList.toggle("on");
+  document.getElementById("allOptions").classList.toggle("hidden",regain);
+}
+
+function copyText(){
+  navigator.clipboard.writeText(document.body.innerText);
 }
 roll();
 </script>
