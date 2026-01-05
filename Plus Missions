@@ -1,223 +1,659 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DMZ Loadout + Mission Generator</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DMZ Random Loadout</title>
+  <style>
+    :root{
+      --bg0:#070A12;
+      --bg1:#0B1220;
+      --card:#0E1A2E;
+      --card2:#0B1628;
+      --text:#EAF1FF;
+      --muted:#A9B7D6;
+      --accent:#6BE4FF;
+      --accent2:#9B7CFF;
+      --good:#43f07b;
+      --warn:#ffd36b;
+      --border:rgba(255,255,255,.10);
+      --shadow: 0 20px 60px rgba(0,0,0,.55);
+      --radius: 22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 20% -10%, rgba(155,124,255,.25), transparent 60%),
+        radial-gradient(900px 700px at 100% 20%, rgba(107,228,255,.18), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+    }
+    .wrap{
+      width:min(980px, 100%);
+      display:grid;
+      gap:18px;
+      grid-template-columns: 1.2fr .8fr;
+    }
+    @media (max-width: 860px){
+      .wrap{grid-template-columns:1fr}
+    }
+    .brand{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px;
+      padding:14px 16px;
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow: var(--shadow);
+    }
+    .title{
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .title h1{margin:0; font-size:18px; letter-spacing:.5px}
+    .title p{margin:0; color:var(--muted); font-size:13px}
+    .pill{
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+      display:flex; align-items:center; gap:8px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 16px rgba(107,228,255,.4);
+    }
 
-<style>
-:root{
-  --bg0:#070A12;
-  --bg1:#0B1220;
-  --text:#EAF1FF;
-  --muted:#A9B7D6;
-  --accent:#6BE4FF;
-  --accent2:#9B7CFF;
-  --border:rgba(255,255,255,.10);
-  --shadow:0 20px 60px rgba(0,0,0,.55);
-  --radius:22px;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-  color:var(--text);
-  background:
-    radial-gradient(1200px 800px at 20% -10%, rgba(155,124,255,.25), transparent 60%),
-    radial-gradient(900px 700px at 100% 20%, rgba(107,228,255,.18), transparent 55%),
-    linear-gradient(180deg,var(--bg0),var(--bg1));
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  padding:22px;
-}
-.wrap{
-  width:min(1100px,100%);
-  display:grid;
-  gap:18px;
-  grid-template-columns:1.25fr .75fr;
-}
-@media(max-width:960px){.wrap{grid-template-columns:1fr}}
+    .card{
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .cardHeader{
+      padding:16px 16px 10px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), transparent);
+    }
+    .cardHeader h2{margin:0; font-size:14px; letter-spacing:.8px; color:var(--muted); text-transform:uppercase}
+    .cardHeader .sub{margin-top:4px; color:rgba(234,241,255,.92); font-size:18px; font-weight:650}
 
-.brand{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:14px 16px;border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
-  box-shadow:var(--shadow);
-}
-.title h1{margin:0;font-size:18px}
-.title p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .grid{
+      padding:14px;
+      display:grid;
+      gap:10px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 520px){ .grid{grid-template-columns:1fr} }
 
-.pill{
-  font-size:12px;padding:8px 10px;border-radius:999px;
-  border:1px solid var(--border);
-  background:rgba(255,255,255,.03);color:var(--muted);
-}
+    .slot{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(14,26,46,.75), rgba(11,22,40,.75));
+      padding:12px 12px 10px;
+      position:relative;
+      overflow:hidden;
+    }
+    .slot::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(600px 160px at 10% 0%, rgba(107,228,255,.12), transparent 55%),
+                  radial-gradient(520px 180px at 90% 10%, rgba(155,124,255,.12), transparent 55%);
+      pointer-events:none;
+    }
+    .slotTop{
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      position:relative;
+    }
+    .label{
+      color:var(--muted);
+      font-size:12px;
+      letter-spacing:.5px;
+      text-transform:uppercase;
+    }
+    .value{
+      margin-top:6px;
+      font-size:16px;
+      font-weight:650;
+      position:relative;
+    }
+    .lockBtn{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+      border-radius: 12px;
+      padding:6px 10px;
+      font-size:12px;
+      cursor:pointer;
+      display:flex; align-items:center; gap:8px;
+      transition: transform .08s ease, background .15s ease, color .15s ease;
+      position:relative;
+    }
+    .lockBtn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.06); color:var(--text); }
+    .lockBtn[data-locked="true"]{
+      color:rgba(234,241,255,.96);
+      border-color: rgba(107,228,255,.30);
+      background: rgba(107,228,255,.10);
+    }
 
-.tabs{margin-top:14px;display:flex;gap:10px}
-.tab{
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:999px;padding:10px 12px;
-  font-size:13px;font-weight:600;
-  background:rgba(255,255,255,.03);
-  color:var(--muted);cursor:pointer;
-}
-.tab[data-active="true"]{
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  color:#061018;border:none;
-}
+    .controls{
+      padding:14px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      border-top:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,.12));
+    }
+    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; }
+    button.primary{
+      border:none;
+      border-radius: 16px;
+      padding:12px 16px;
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:.6px;
+      color:#061018;
+      cursor:pointer;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 12px 40px rgba(107,228,255,.18);
+      transition: transform .08s ease, filter .15s ease;
+    }
+    button.primary:hover{ transform: translateY(-1px); filter: brightness(1.05); }
+    button.secondary{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      padding:12px 14px;
+      font-size:14px;
+      font-weight:650;
+      color:var(--text);
+      background: rgba(255,255,255,.03);
+      cursor:pointer;
+      transition: transform .08s ease, background .15s ease;
+    }
+    button.secondary:hover{ transform: translateY(-1px); background: rgba(255,255,255,.06); }
+    .hint{
+      color:var(--muted);
+      font-size:12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color:rgba(234,241,255,.9);
+    }
 
-.card{
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
-  box-shadow:var(--shadow);
-  overflow:hidden;
-  margin-top:14px;
-}
-.cardHeader{
-  padding:16px;border-bottom:1px solid rgba(255,255,255,.08);
-}
-.cardHeader h2{margin:0;font-size:14px;color:var(--muted)}
-.cardHeader .sub{margin-top:6px;font-size:18px;font-weight:600}
-
-.grid{
-  padding:14px;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-@media(max-width:560px){.grid{grid-template-columns:1fr}}
-
-.slot{
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:18px;
-  padding:12px;
-  background:rgba(255,255,255,.03);
-}
-.label{font-size:12px;color:var(--muted)}
-.value{margin-top:6px;font-size:16px;font-weight:600}
-
-.controls{
-  padding:14px;
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-button{
-  border:none;border-radius:14px;
-  padding:10px 14px;font-weight:600;
-  cursor:pointer;
-}
-.primary{
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  color:#061018;
-}
-.secondary{
-  background:rgba(255,255,255,.06);
-  color:var(--text);
-  border:1px solid var(--border);
-}
-.side{display:flex;flex-direction:column;gap:18px}
-.panel{padding:14px}
-.small{font-size:12px;color:var(--muted)}
-</style>
+    .side{
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+    .panel{
+      padding:14px 14px 12px;
+    }
+    .panel h3{
+      margin:0 0 8px;
+      font-size:14px;
+      letter-spacing:.7px;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .toggleRow{
+      display:grid;
+      gap:10px;
+    }
+    .toggle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,.03);
+    }
+    .toggle .tL{
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .toggle .tL b{font-size:14px}
+    .toggle .tL span{font-size:12px; color:var(--muted)}
+    .switch{
+      width:44px; height:26px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      position:relative;
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+    .switch::after{
+      content:"";
+      width:20px; height:20px;
+      border-radius:999px;
+      position:absolute;
+      top:50%; left:3px;
+      transform:translateY(-50%);
+      background: rgba(234,241,255,.86);
+      transition: left .15s ease, background .15s ease;
+    }
+    .switch[data-on="true"]{
+      border-color: rgba(107,228,255,.35);
+      background: rgba(107,228,255,.12);
+    }
+    .switch[data-on="true"]::after{
+      left:21px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .toast{
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10,16,28,.92);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(234,241,255,.95);
+      padding: 10px 12px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+      font-size: 13px;
+    }
+    .toast.show{
+      opacity:1;
+      transform: translateX(-50%) translateY(-6px);
+    }
+  </style>
 </head>
 
 <body>
-<div class="wrap">
+  <div class="wrap">
+    <div>
+      <div class="brand">
+        <div class="title">
+          <h1>DMZ Random Loadout</h1>
+          <p>Full kit • DMZ-feeling • lock + reroll • stream-ready</p>
+        </div>
+        <div class="pill"><span class="dot"></span><span id="seedLabel">Seed: —</span></div>
+      </div>
 
-<div>
-  <div class="brand">
-    <div class="title">
-      <h1>DMZ Loadout + Mission Generator</h1>
-      <p>DMZ-legal • realistic missions • stream-ready</p>
+      <div class="card" style="margin-top:18px;">
+        <div class="cardHeader">
+          <div>
+            <h2>Loadout Card</h2>
+            <div class="sub" id="headline">Tap ROLL to generate</div>
+          </div>
+          <div class="pill" title="Lock any slot to keep it on rerolls">
+            Locks persist per device
+          </div>
+        </div>
+
+        <div class="grid" id="slots"></div>
+
+        <div class="controls">
+          <div class="btnRow">
+            <button class="primary" id="rollBtn">ROLL</button>
+            <button class="secondary" id="copyBtn">Copy</button>
+            <button class="secondary" id="shareBtn">Share</button>
+          </div>
+          <div class="hint">
+            <span class="kbd">L</span> lock focused • <span class="kbd">R</span> reroll
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="pill" id="seed">Seed: —</div>
-  </div>
 
-  <div class="tabs">
-    <div class="tab" data-active="true">Combo</div>
-  </div>
+    <div class="side">
+      <div class="card panel">
+        <h3>Modes</h3>
+        <div class="toggleRow">
+          <div class="toggle">
+            <div class="tL">
+              <b>Regain Run</b>
+              <span>More likely: basic gear, no “premium” stacks</span>
+            </div>
+            <div class="switch" id="regainSwitch" data-on="false" role="switch" aria-checked="false"></div>
+          </div>
 
-  <div class="card">
-    <div class="cardHeader">
-      <h2>Current Roll</h2>
-      <div class="sub" id="headline">Tap ROLL</div>
+          <div class="toggle">
+            <div class="tL">
+              <b>Hard Mode</b>
+              <span>Fewer comforts (reduces streaks + high-end masks)</span>
+            </div>
+            <div class="switch" id="hardSwitch" data-on="false" role="switch" aria-checked="false"></div>
+          </div>
+
+          <div class="toggle">
+            <div class="tL">
+              <b>One-Weapon</b>
+              <span>Primary only, secondary becomes “none/knife”</span>
+            </div>
+            <div class="switch" id="oneWeaponSwitch" data-on="false" role="switch" aria-checked="false"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card panel">
+        <h3>Stream Tip</h3>
+        <div style="color:var(--muted); font-size:13px; line-height:1.45;">
+          Add this page as an <b>OBS Browser Source</b>. Use 1280×720.  
+          Viewers can use the same hosted link.
+          <div style="margin-top:10px; padding:10px; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03);">
+            <b style="color:rgba(234,241,255,.95)">Pro UX move:</b>
+            keep the generator on-stream and hit <span class="kbd">R</span> between raids.
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="grid" id="grid"></div>
-    <div class="controls">
-      <button class="primary" onclick="roll()">ROLL</button>
-      <button class="secondary" onclick="copy()">Copy</button>
-    </div>
-  </div>
-</div>
-
-<div class="side">
-  <div class="card panel">
-    <h3>Difficulty</h3>
-    <select id="difficulty" onchange="roll()">
-      <option value="easy">Easy</option>
-      <option value="normal">Normal</option>
-      <option value="spicy">Spicy</option>
-    </select>
-    <p class="small">Easy = high completion</p>
   </div>
 
-  <div class="card panel">
-    <h3>Regain Mode</h3>
-    <input type="checkbox" id="regain" onchange="roll()"> Enable
-  </div>
-
-  <div class="card panel">
-    <h3>Hardcore</h3>
-    <input type="checkbox" id="hardcore" onchange="roll()"> Enable
-  </div>
-</div>
-
-</div>
+  <div class="toast" id="toast"></div>
 
 <script>
-const loadout={
-Primary:["M4","TAQ-56","ISO Hemlock","Kastov 762"],
-Secondary:["X13 Auto","P890","Combat Knife"],
-Tactical:["Smoke","Stun","Spotter Scope"],
-Lethal:["Semtex","Drill Charge","Frag"],
-Vest:["2-Plate","3-Plate"],
-Backpack:["Small","Medium","Large"]
+/**
+ * DMZ-feeling pool (starter set).
+ * You can expand weapons later; UX stays the same.
+ * NOTE: DMZ overlaps with MWII equipment; this pool focuses on items that "feel DMZ" as a kit.
+ */
+
+const POOLS = {
+  Primary: [
+    // Curated, expandable
+    "TAQ-56 (AR)", "M4 (AR)", "Kastov 762 (AR)", "Chimera (AR)", "ISO Hemlock (AR)",
+    "Lachmann Sub (SMG)", "Fennec 45 (SMG)", "Vaznev-9K (SMG)", "BAS-P (SMG)",
+    "Bryson 800 (Shotgun)", "KV Broadside (Shotgun)",
+    "RPK (LMG)", "Sakin MG38 (LMG)",
+    "TAQ-V (BR)", "Lachmann-762 (BR)",
+    "SP-R 208 (Marksman)", "SA-B 50 (Marksman)",
+    "Victus XMR (Sniper)", "MCPR-300 (Sniper)"
+  ],
+  Secondary: [
+    "X13 Auto (Pistol)", "P890 (Pistol)", "X12 (Pistol)", "Basilisk (Pistol)",
+    "PILA (Launcher)", "JOKR (Launcher)", "Strela-P (Launcher)",
+    "Combat Knife (Melee)"
+  ],
+  Tactical: [
+    "Smoke Grenade", "Stun Grenade", "Snapshot Grenade", "Spotter Scope",
+    "Flash Grenade", "Heartbeat Sensor"
+  ],
+  Lethal: [
+    "Semtex", "Drill Charge", "Frag Grenade", "Molotov", "Throwing Knife", "C4"
+  ],
+  FieldUpgrade: [
+    "Munitions Box", "Armor Box", "Trophy System", "Dead Silence"
+  ],
+  Vest: [
+    "2-Plate Vest", "3-Plate Vest", "3-Plate Comms Vest", "3-Plate Medic Vest", "3-Plate Stealth Vest"
+  ],
+  Backpack: [
+    "Small Backpack", "Medium Backpack", "Large Backpack"
+  ],
+  Killstreak: [
+    "UAV", "Precision Airstrike", "Mortar Strike", "Advanced UAV"
+  ],
+  Revive: [
+    "Self-Revive Kit", "Revive Pistol"
+  ],
+  Mask: [
+    "Gas Mask", "Durable Gas Mask", "Radiation Blocker"
+  ],
+  Extra: [
+    "Stronghold Keycard", "Armor Plates (extra stack)", "Ammo (extra stack)", "Cash Goal: $20k",
+    "Contract Focus: Secure Intel", "Contract Focus: HVT", "Contract Focus: Safecracker"
+  ]
 };
 
-const missions={
-easy:["Complete 1 contract","Extract $20k","Clear 1 Stronghold"],
-normal:["Complete 2 contracts","Extract $30k","Loot locked space"],
-spicy:["Complete 3 contracts","Clear 2 Strongholds","Extract $40k"]
+const ORDER = [
+  "Primary","Secondary","Tactical","Lethal","FieldUpgrade",
+  "Vest","Backpack","Killstreak","Revive","Mask","Extra"
+];
+
+const state = {
+  locks: {},
+  values: {},
+  regain:false,
+  hard:false,
+  oneWeapon:false,
+  seed: null,
+  focusedKey: null
 };
 
-function rand(a){return a[Math.floor(Math.random()*a.length)]}
+const elSlots = document.getElementById("slots");
+const elHeadline = document.getElementById("headline");
+const elSeed = document.getElementById("seedLabel");
+const toast = document.getElementById("toast");
 
-function roll(){
-  const seed=Math.random().toString(36).slice(2,8).toUpperCase();
-  document.getElementById("seed").textContent="Seed: "+seed;
-  document.getElementById("headline").textContent="Good luck";
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"), 1300);
+}
 
-  const grid=document.getElementById("grid");
-  grid.innerHTML="";
+function loadLocks(){
+  try{
+    const raw = localStorage.getItem("dmz_locks");
+    if(raw) state.locks = JSON.parse(raw);
+  }catch{}
+}
+function saveLocks(){
+  try{
+    localStorage.setItem("dmz_locks", JSON.stringify(state.locks));
+  }catch{}
+}
 
-  Object.keys(loadout).forEach(k=>{
-    grid.innerHTML+=`<div class="slot"><div class="label">${k}</div><div class="value">${rand(loadout[k])}</div></div>`;
+function randSeed(){
+  // short seed for shareability
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+function pick(arr){
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+// simple weighting helpers
+function weightedPick(options){
+  // options: [{v, w}]
+  const total = options.reduce((s,o)=>s+o.w,0);
+  let r = Math.random()*total;
+  for(const o of options){
+    r -= o.w;
+    if(r<=0) return o.v;
+  }
+  return options[options.length-1].v;
+}
+
+function poolForKey(key){
+  // apply mode logic without getting overly complex
+  let arr = [...POOLS[key]];
+
+  if(state.hard){
+    if(key === "Killstreak") arr = arr.filter(v => v !== "Advanced UAV");
+    if(key === "Mask") arr = arr.filter(v => v !== "Durable Gas Mask");
+  }
+
+  if(state.regain){
+    if(key === "Vest") arr = ["2-Plate Vest","3-Plate Vest"];
+    if(key === "Backpack") arr = ["Small Backpack","Medium Backpack"];
+    if(key === "Killstreak") arr = ["UAV","Precision Airstrike","Mortar Strike"];
+  }
+
+  if(state.oneWeapon){
+    if(key === "Secondary") arr = ["None (empty slot)","Combat Knife (Melee)"];
+  }
+
+  return arr;
+}
+
+function generate(){
+  state.seed = randSeed();
+  elSeed.textContent = `Seed: ${state.seed}`;
+
+  for(const key of ORDER){
+    if(state.locks[key]) continue;
+    const arr = poolForKey(key);
+
+    // tiny extra weighting for “DMZ vibe”
+    if(key === "Tactical"){
+      // smoke/spotter are very DMZ-feeling
+      state.values[key] = weightedPick([
+        {v:"Smoke Grenade", w: state.regain ? 4 : 3},
+        {v:"Spotter Scope", w: 3},
+        {v: pick(arr), w: 6}
+      ]);
+    } else if(key === "Revive"){
+      // self-revive more common than revive pistol
+      state.values[key] = weightedPick([
+        {v:"Self-Revive Kit", w: 8},
+        {v:"Revive Pistol", w: 2}
+      ]);
+    } else {
+      state.values[key] = pick(arr);
+    }
+  }
+
+  // headline
+  const style = state.regain ? "Regain" : (state.hard ? "Hard" : "Standard");
+  elHeadline.textContent = `${style} Kit • ${state.seed}`;
+  render();
+}
+
+function slotHTML(key){
+  const locked = !!state.locks[key];
+  const value = state.values[key] ?? "—";
+  return `
+    <div class="slot" tabindex="0" data-key="${key}">
+      <div class="slotTop">
+        <div class="label">${key}</div>
+        <button class="lockBtn" data-key="${key}" data-locked="${locked}">
+          ${locked ? "🔒 Locked" : "🔓 Lock"}
+        </button>
+      </div>
+      <div class="value" id="val_${key}">${value}</div>
+    </div>
+  `;
+}
+
+function render(){
+  elSlots.innerHTML = ORDER.map(slotHTML).join("");
+
+  // attach lock handlers + focus tracking
+  elSlots.querySelectorAll(".lockBtn").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const k = btn.dataset.key;
+      state.locks[k] = !state.locks[k];
+      saveLocks();
+      showToast(state.locks[k] ? `${k} locked` : `${k} unlocked`);
+      render();
+    });
   });
 
-  const diff=document.getElementById("difficulty").value;
-  grid.innerHTML+=`<div class="slot"><div class="label">Mission</div><div class="value">${rand(missions[diff])}</div></div>`;
+  elSlots.querySelectorAll(".slot").forEach(slot=>{
+    slot.addEventListener("focus", ()=> state.focusedKey = slot.dataset.key);
+    slot.addEventListener("click", ()=> slot.focus());
+  });
 }
 
-function copy(){
-  let t="DMZ LOADOUT\n";
-  document.querySelectorAll(".slot").forEach(s=>t+=s.innerText+"\n");
-  navigator.clipboard.writeText(t);
+function toText(){
+  const lines = [];
+  lines.push(`DMZ RANDOM KIT — ${state.seed ?? "—"}`);
+  for(const key of ORDER){
+    lines.push(`${key}: ${state.values[key] ?? "—"}${state.locks[key] ? " (locked)" : ""}`);
+  }
+  if(state.regain) lines.push("Mode: Regain Run");
+  if(state.hard) lines.push("Mode: Hard Mode");
+  if(state.oneWeapon) lines.push("Mode: One-Weapon");
+  return lines.join("\n");
 }
-roll();
+
+async function copy(){
+  const text = toText();
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast("Copied to clipboard");
+  }catch{
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    showToast("Copied");
+  }
+}
+
+async function share(){
+  const text = toText();
+  const payload = { title: "DMZ Random Kit", text };
+  if(navigator.share){
+    try{
+      await navigator.share(payload);
+      return;
+    }catch{}
+  }
+  await copy();
+  showToast("Share not available — copied instead");
+}
+
+function bindSwitch(id, key){
+  const el = document.getElementById(id);
+  el.addEventListener("click", ()=>{
+    state[key] = !state[key];
+    el.dataset.on = state[key] ? "true" : "false";
+    el.setAttribute("aria-checked", state[key] ? "true" : "false");
+    // reroll immediately for snappy UX
+    generate();
+  });
+}
+
+document.getElementById("rollBtn").addEventListener("click", generate);
+document.getElementById("copyBtn").addEventListener("click", copy);
+document.getElementById("shareBtn").addEventListener("click", share);
+
+bindSwitch("regainSwitch", "regain");
+bindSwitch("hardSwitch", "hard");
+bindSwitch("oneWeaponSwitch", "oneWeapon");
+
+window.addEventListener("keydown", (e)=>{
+  if(e.key.toLowerCase() === "r"){
+    generate();
+  }
+  if(e.key.toLowerCase() === "l" && state.focusedKey){
+    state.locks[state.focusedKey] = !state.locks[state.focusedKey];
+    saveLocks();
+    showToast(state.locks[state.focusedKey] ? `${state.focusedKey} locked` : `${state.focusedKey} unlocked`);
+    render();
+  }
+});
+
+// init
+loadLocks();
+render();
 </script>
 </body>
 </html>
