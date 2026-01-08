@@ -13,6 +13,8 @@
       --shadow: 0 20px 60px rgba(0,0,0,.55);
       --radius: 22px;
       --danger:#FF5C7A;
+      --ok:#52FFB5;
+      --warn:#FFD166;
     }
     *{box-sizing:border-box}
     body{
@@ -30,7 +32,7 @@
       padding:22px;
     }
     .wrap{
-      width:min(1200px, 100%);
+      width:min(1240px, 100%);
       display:grid;
       gap:18px;
       grid-template-columns: 1.2fr .8fr;
@@ -138,18 +140,6 @@
       margin-right:6px;
     }
 
-    .missionLine{
-      border:1px solid rgba(255,255,255,.08);
-      border-radius: 18px;
-      background: rgba(255,255,255,.03);
-      padding:12px;
-      margin-bottom:10px;
-    }
-    .missionLine:last-child{margin-bottom:0}
-    .missionKey{font-size:12px; color:var(--muted); letter-spacing:.5px; text-transform:uppercase;}
-    .missionVal{font-size:15px; font-weight:650; line-height:1.25; margin-top:6px;}
-    .missionHint{margin-top:6px; font-size:12px; color:var(--muted); line-height:1.35;}
-
     .controls{
       padding:14px;
       display:flex;
@@ -160,7 +150,7 @@
       border-top:1px solid rgba(255,255,255,.08);
       background: linear-gradient(180deg, transparent, rgba(0,0,0,.12));
     }
-    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; }
+    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     button{
       border:none;
       border-radius: 16px;
@@ -186,6 +176,13 @@
       background: rgba(255,92,122,.12);
       border:1px solid rgba(255,92,122,.35);
       font-weight:700;
+    }
+    button.ok{
+      color:#061018;
+      background: rgba(82,255,181,.85);
+      border: 1px solid rgba(82,255,181,.35);
+      box-shadow: 0 12px 40px rgba(82,255,181,.12);
+      font-weight:800;
     }
 
     .side{display:flex; flex-direction:column; gap:18px;}
@@ -235,6 +232,16 @@
     .sliderTop b{font-size:14px}
     .sliderTop span{font-size:12px; color:var(--muted)}
     input[type="range"]{width:100%}
+    select{
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      color: rgba(234,241,255,.92);
+      padding:10px 12px;
+      font-size:13px;
+      font-weight:650;
+    }
+    .miniRow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px;}
     .mutedNote{color:var(--muted); font-size:12px; margin-top:8px; line-height:1.4}
     .hidden{display:none !important;}
 
@@ -256,6 +263,41 @@
       z-index: 99;
     }
     .toast.show{opacity:1; transform: translateX(-50%) translateY(-6px);}
+
+    /* Mission UI update */
+    .badgeRow{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;}
+    .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      color:rgba(234,241,255,.92);
+      white-space:nowrap;
+    }
+    .badge .bDot{width:8px;height:8px;border-radius:99px;background:rgba(107,228,255,.8);box-shadow:0 0 14px rgba(107,228,255,.25);}
+    .badge.ok .bDot{background:rgba(82,255,181,.85);box-shadow:0 0 14px rgba(82,255,181,.22);}
+    .badge.warn .bDot{background:rgba(255,209,102,.9);box-shadow:0 0 14px rgba(255,209,102,.22);}
+    .badge.danger .bDot{background:rgba(255,92,122,.9);box-shadow:0 0 14px rgba(255,92,122,.22);}
+
+    .missionCard{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,.03);
+      padding:12px;
+      margin-bottom:10px;
+    }
+    .missionKey{font-size:12px; color:var(--muted); letter-spacing:.5px; text-transform:uppercase;}
+    .missionVal{font-size:15px; font-weight:700; line-height:1.25; margin-top:6px;}
+    .missionSmall{margin-top:6px; font-size:12px; color:var(--muted); line-height:1.35;}
+    ul.objList{margin:10px 0 0; padding-left:18px; color:rgba(234,241,255,.92);}
+    ul.objList li{margin:6px 0; font-size:13px; line-height:1.25;}
+    .divider{height:1px;background:rgba(255,255,255,.08);margin:10px 0;}
+    .dailyCard{
+      border:1px solid rgba(82,255,181,.18);
+      background: rgba(82,255,181,.06);
+    }
 
     /* Pools Modal */
     .modalOverlay{
@@ -347,9 +389,30 @@
       <div class="brand">
         <div class="title">
           <h1>DMZ MW2 Loadout + Mission Generator</h1>
-          <p>DMZ (MW2) only • Regain adds extra slots only • Attachments toggle adds random attachments for weapons • Solo/Squad affects missions</p>
+          <p>DMZ-authentic missions • Faction flavor • Chains • Meme↔Meta • Daily Run</p>
         </div>
         <div class="pill"><span class="dot"></span><span id="seedLabel">Seed: —</span></div>
+      </div>
+
+      <!-- DAILY RUN CARD -->
+      <div class="card" id="dailyCard" style="margin-top:14px;">
+        <div class="cardHeader">
+          <div>
+            <h2>Daily Run Card</h2>
+            <div class="sub" id="dailyHeadline">Not generated today</div>
+            <div class="badgeRow" id="dailyBadges"></div>
+          </div>
+          <div class="pill" id="dailyResetPill">Resets: —</div>
+        </div>
+        <div class="sectionBody" id="dailyBody"></div>
+        <div class="controls">
+          <div class="btnRow">
+            <button class="ok" id="dailyGenerateBtn">Generate Daily</button>
+            <button class="secondary" id="dailyCopyBtn">Copy Daily</button>
+            <button class="danger" id="dailyClearBtn">Clear</button>
+          </div>
+          <div class="mutedNote">Daily Run is locked for the day (saved in your browser). It uses your current settings.</div>
+        </div>
       </div>
 
       <!-- LOADOUT -->
@@ -359,13 +422,12 @@
             <h2>Loadout</h2>
             <div class="sub" id="loadoutHeadline">Tap ROLL to generate</div>
           </div>
-          <div class="pill" title="Primary is full weapon pool. Secondary is limited (handguns/launchers/melee).">Secondary is limited</div>
+          <div class="pill" title="Primary is full pool. Secondary is limited to pistols/launchers/melee.">True secondary pool</div>
         </div>
 
         <div class="sectionBody">
           <div class="mutedNote" style="margin-bottom:10px;">
-            <b>Primary</b> rolls from the full MW2 weapon pool.<br>
-            <b>Secondary</b> rolls only from <b>handguns / launchers / melee</b> (editable in Pools).
+            <b>Regain</b> only adds extra gear slots. Missions unaffected by Regain.
           </div>
 
           <div class="grid2" id="baseLoadoutSlots"></div>
@@ -380,9 +442,17 @@
           <div class="btnRow">
             <button class="primary" id="rollBtn">ROLL</button>
             <button class="secondary" id="copyBtn">Copy</button>
-            <button class="secondary" id="editPoolsBtn" title="Edit the pools without cluttering the main screen">Edit Pools</button>
+            <button class="secondary" id="editPoolsBtn" title="Edit loadout pools (saved in your browser)">Edit Pools</button>
           </div>
-          <div class="mutedNote">OBS: add as Browser Source • Copy for chat/title</div>
+          <div class="miniRow">
+            <label class="mutedNote" style="margin:0;">Copy format</label>
+            <select id="exportFormat">
+              <option value="discord">Discord</option>
+              <option value="plain" selected>Plain</option>
+              <option value="checklist">Checklist</option>
+              <option value="oneline">One-line</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -390,12 +460,42 @@
       <div class="card" style="margin-top:14px;">
         <div class="cardHeader">
           <div>
-            <h2>Mission</h2>
+            <h2>Mission Board</h2>
             <div class="sub" id="missionHeadline">Tap ROLL to generate</div>
+            <div class="badgeRow" id="missionBadges"></div>
           </div>
           <div class="pill" id="modePill" title="Solo/Squad changes mission flavor">Mode: Solo</div>
         </div>
-        <div class="sectionBody" id="missionBody"></div>
+
+        <div class="sectionBody">
+          <div class="mutedNote" id="factionBriefing" style="margin-bottom:10px;"></div>
+
+          <div id="chainBlock" class="hidden" style="margin-bottom:12px;"></div>
+
+          <div class="missionCard">
+            <div class="missionKey">Mission Title</div>
+            <div class="missionVal" id="missionTitle">—</div>
+            <div class="missionSmall" id="missionSubtitle">—</div>
+            <div class="divider"></div>
+            <div class="missionKey">Objectives</div>
+            <ul class="objList" id="missionObjectives"></ul>
+            <div class="divider"></div>
+            <div class="missionKey">Constraints</div>
+            <ul class="objList" id="missionConstraints"></ul>
+            <div class="divider"></div>
+            <div class="missionKey">Optional Bonus</div>
+            <div class="missionSmall" id="missionBonus">—</div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="btnRow">
+            <button class="secondary" id="startChainBtn">Start Chain</button>
+            <button class="ok" id="advanceChainBtn">Advance Step</button>
+            <button class="danger" id="failChainBtn">Fail / Reset</button>
+          </div>
+          <div class="mutedNote">Chains are multi-deployment objectives. If Chains are OFF, these buttons do nothing.</div>
+        </div>
       </div>
     </div>
 
@@ -410,7 +510,18 @@
           </div>
           <input id="diffSlider" type="range" min="0" max="2" step="1" value="0" />
         </div>
-        <div class="mutedNote">Difficulty only affects missions.</div>
+      </div>
+
+      <div class="card panel">
+        <h3>Meme ↔ Meta</h3>
+        <div class="sliderBox">
+          <div class="sliderTop">
+            <b id="mmLabel">Balanced</b>
+            <span id="mmHint">50%</span>
+          </div>
+          <input id="mmSlider" type="range" min="0" max="100" step="1" value="50" />
+        </div>
+        <div class="mutedNote">Affects loadout weighting + attachment coherence (not missions).</div>
       </div>
 
       <div class="card panel">
@@ -419,7 +530,7 @@
         <div class="toggle">
           <div class="tL">
             <b>Regain Mode</b>
-            <span>Adds Vest/Backpack/Revive/Mask slots</span>
+            <span>Adds Vest/Backpack/Revive/Mask slots only</span>
           </div>
           <div class="switch" id="regainSwitch" data-on="false" role="switch" aria-checked="false"></div>
         </div>
@@ -440,15 +551,33 @@
           <div class="switch" id="squadSwitch" data-on="false" role="switch" aria-checked="false"></div>
         </div>
 
+        <div class="toggle" style="margin-top:10px;">
+          <div class="tL">
+            <b>Mission Chains</b>
+            <span>Multi-deployment transport/deliver missions</span>
+          </div>
+          <div class="switch" id="chainsSwitch" data-on="false" role="switch" aria-checked="false"></div>
+        </div>
+
+        <div class="miniRow">
+          <label class="mutedNote" style="margin:0;">Map flavor</label>
+          <select id="mapFlavor">
+            <option value="any" selected>Any</option>
+            <option value="al">Al Mazrah</option>
+            <option value="ash">Ashika</option>
+            <option value="von">Vondel</option>
+          </select>
+        </div>
+
         <div class="mutedNote" style="margin-top:10px;">
-          Want a different “secondary ruleset”? Edit the Secondary pool in <b>Edit Pools</b>.
+          Map flavor is wording-only (no detection).
         </div>
       </div>
 
       <div class="card panel">
         <h3>Share</h3>
         <div class="mutedNote" style="margin-top:0;">
-          GitHub Pages link is your stream link.<br>
+          GitHub Pages link is your site link.<br>
           Example: <span style="color:rgba(234,241,255,.9)">https://USERNAME.github.io/REPO/</span>
         </div>
       </div>
@@ -489,37 +618,77 @@
   </div>
 
 <script>
-const STORAGE_KEY = "dmz_mw2_pools_v5_secondary_fixed";
+/* =========================
+   STORAGE KEYS
+========================= */
+const STORAGE_KEY_POOLS = "dmz_mw2_pools_v7";
+const STORAGE_KEY_APP   = "dmz_mw2_appstate_v3";
+const STORAGE_KEY_DAILY = "dmz_mw2_daily_v1";
 
-/* DEFAULT POOLS
-   - PRIMARY_WEAPONS: full pool for primary slot
-   - SECONDARY_WEAPONS: LIMITED pool (handguns/launchers/melee) for secondary slot
-*/
+/* =========================
+   FACTIONS (FLAVOR)
+========================= */
+const FACTIONS = [
+  {
+    name: "White Lotus",
+    tone: "ok",
+    intros: [
+      "White Lotus has identified an opportunity. Execute with discipline.",
+      "Maintain operational security. Keep it clean and extract.",
+      "Precision matters. Minimize exposure and finish the task."
+    ],
+    verbs: { acquire:"Acquire", secure:"Secure", upload:"Upload", deliver:"Deliver", exfil:"Exfil", clear:"Clear" }
+  },
+  {
+    name: "Legion",
+    tone: "warn",
+    intros: [
+      "Legion wants the area controlled. Expect resistance.",
+      "Force projection required. Move decisively and secure the objective.",
+      "No hesitation. Clear the route and extract with intent."
+    ],
+    verbs: { acquire:"Take", secure:"Hold", upload:"Transmit", deliver:"Move", exfil:"Extract", clear:"Clear" }
+  },
+  {
+    name: "Black Mous",
+    tone: "warn",
+    intros: [
+      "Black Mous needs a delivery handled quietly. Keep it moving.",
+      "Loose ends are unacceptable. Deliver the asset and disappear.",
+      "Smuggling run. Don’t get greedy—get it done."
+    ],
+    verbs: { acquire:"Acquire", secure:"Secure", upload:"Upload", deliver:"Dead drop", exfil:"Exfil", clear:"Breach" }
+  },
+  {
+    name: "Crown",
+    tone: "danger",
+    intros: [
+      "Crown demands results. High risk, high value.",
+      "Failure is not acceptable. Operate like professionals.",
+      "This is a premium operation. Execute and extract."
+    ],
+    verbs: { acquire:"Acquire", secure:"Secure", upload:"Confirm", deliver:"Deliver", exfil:"Exfiltrate", clear:"Clear" }
+  }
+];
+
+/* =========================
+   DEFAULT LOADOUT POOLS (MW2 DMZ)
+========================= */
 const DEFAULT_POOLS = {
   PRIMARY_WEAPONS: [
-    // Assault Rifles
     "M4","TAQ-56","Kastov 762","Lachmann-556","STB 556","M16","Kastov-74u","Kastov 545",
     "M13B","Chimera","ISO Hemlock","Tempus Razorback","FR Avancer","M13C","TR-76 Geist",
-    // Battle Rifles
     "Lachmann-762","SO-14","TAQ-V","FTAC Recon","Cronen Squall",
-    // SMGs
     "VEL 46","MX9","Lachmann Sub","Vaznev-9K","FSS Hurricane","Minibak","PDSW 528","Fennec 45","BAS-P",
     "ISO 45","Lachmann Shroud",
-    // LMGs
     "SAKIN MG38","HCR 56","556 Icarus","RAAL MG","RPK","RAPP H",
-    // Shotguns
     "Lockwood 300","Expedite 12","Bryson 800","Bryson 890","KV Broadside","MX Guardian",
-    // Marksman
     "EBR-14","SP-R 208","Lockwood MK2","LM-S","SA-B 50","TAQ-M","Crossbow","Tempus Torrent",
-    // Snipers
     "MCPR-300","Signal 50","LA-B 330","SP-X 80","Victus XMR","FJX Imperium","Carrack .300"
   ],
   SECONDARY_WEAPONS: [
-    // Handguns
     "P890",".50 GS","X12","Basilisk","X13 Auto","FTac Siege","GS Magna","9mm Daemon",
-    // Launchers
     "RPG-7","PILA","JOKR","Strela-P",
-    // Melee / Shield
     "Riot Shield","Combat Knife","Dual Kodachis","Tonfa","Pickaxe","Dual Kamas"
   ],
   TACTICAL: [
@@ -541,12 +710,13 @@ const DEFAULT_POOLS = {
   MASK: ["Gas Mask","Durable Gas Mask","Radiation Blocker"]
 };
 
-/* Weapon type lookup for attachments */
+const META_PRIMARY = new Set(["TAQ-56","ISO Hemlock","M13B","Chimera","M4","Vaznev-9K","Lachmann Sub","Fennec 45","BAS-P","RPK","RAAL MG","Cronen Squall","TAQ-V","MCPR-300","Victus XMR","Signal 50"]);
+const MEME_PRIMARY = new Set(["Crossbow","Lockwood MK2","SP-R 208","LM-S","Lockwood 300","Bryson 800","Bryson 890","KV Broadside","M16","SO-14","FTAC Recon","Minibak","MX9","Carrack .300","LA-B 330"]);
+
+/* =========================
+   ATTACHMENTS
+========================= */
 const WEAPON_TYPE = {
-  RIFLE: new Set([
-    // (Primary pool types)
-    ...DEFAULT_POOLS.PRIMARY_WEAPONS
-  ]),
   SHOTGUN: new Set(["Lockwood 300","Expedite 12","Bryson 800","Bryson 890","KV Broadside","MX Guardian"]),
   PISTOL: new Set(["P890",".50 GS","X12","Basilisk","X13 Auto","FTac Siege","GS Magna","9mm Daemon"]),
   LAUNCHER: new Set(["RPG-7","PILA","JOKR","Strela-P"]),
@@ -555,39 +725,18 @@ const WEAPON_TYPE = {
 };
 
 const ATTACH_POOLS = {
-  OPTIC: [
-    "Cronen Mini Pro","Slimline Pro","VLK 4.0 Optic","Aim OP-V4","SZ Holotherm",
-    "Cronen C480 Pro Optic","Xten Angel-40","DF105 Reflex Sight","Thermo-Optic X9"
-  ],
-  MUZZLE: [
-    "Sakin Tread-40","Echoless-80","Harbinger D20","Lockshot KT85","Komodo Heavy",
-    "Bryson Choke","XTEN Ported 290","RF Crown 50"
-  ],
-  BARREL: [
-    "Long Barrel","Heavy Barrel","Short Barrel","Precision Barrel","Rifle-Length Barrel",
-    "XRK Barrel","FTAC Barrel","Hightower Barrel"
-  ],
-  UNDERBARREL: [
-    "FSS Sharkfin 90","Edge-47 Grip","Commando Foregrip","FTAC Ripper 56","VX Pineapple","Bipod (if available)"
-  ],
-  MAGAZINE: [
-    "Extended Mag","High Capacity Mag","Fast Mag","Drum Mag (if available)","Small Caliber Mag"
-  ],
-  LASER: [
-    "FSS OLE-V Laser","VLK LZR 7mW","1mW Quick Fire Laser","Hipfire Laser","Laser Box"
-  ],
-  STOCK: [
-    "Heavy Stock","Light Stock","No Stock","Tactical Stock","Precision Stock"
-  ],
-  REAR_GRIP: [
-    "Granular Grip","Stippled Grip Tape","Rubberized Grip Tape","Ergonomic Grip","Recoil Grip"
-  ],
-  AMMO: [
-    "High Velocity","Armor Piercing","Hollowpoint","Incendiary","Frangible"
-  ],
-  BOLT: ["Fast Bolt","Light Bolt","Heavy Bolt"],
+  OPTIC: ["Cronen Mini Pro","Slimline Pro","VLK 4.0 Optic","Aim OP-V4","SZ Holotherm","Cronen C480 Pro Optic","Xten Angel-40","DF105 Reflex Sight","Thermo-Optic X9"],
+  MUZZLE: ["Sakin Tread-40","Echoless-80","Harbinger D20","Lockshot KT85","Komodo Heavy","XTEN Ported 290","RF Crown 50"],
+  BARREL: ["Long Barrel","Heavy Barrel","Short Barrel","Precision Barrel","Rifle-Length Barrel","XRK Barrel","FTAC Barrel","Hightower Barrel"],
+  UNDERBARREL: ["FSS Sharkfin 90","Edge-47 Grip","Commando Foregrip","FTAC Ripper 56","VX Pineapple"],
+  MAGAZINE: ["Extended Mag","High Capacity Mag","Fast Mag","Drum Mag (if available)"],
+  LASER: ["FSS OLE-V Laser","VLK LZR 7mW","1mW Quick Fire Laser","Hipfire Laser"],
+  STOCK: ["Heavy Stock","Light Stock","No Stock","Tactical Stock","Precision Stock"],
+  REAR_GRIP: ["Granular Grip","Stippled Grip Tape","Rubberized Grip Tape","Ergonomic Grip","Recoil Grip"],
+  AMMO: ["High Velocity","Armor Piercing","Incendiary","Frangible"],
+  BOLT: ["Fast Bolt","Heavy Bolt"],
   GUARD: ["Guard: Tactical","Guard: Heavy","Guard: Lightweight"],
-  TRIGGER: ["Hair Trigger","Match Trigger","Heavy Trigger","Quickdraw Trigger"]
+  TRIGGER: ["Hair Trigger","Match Trigger","Quickdraw Trigger"]
 };
 
 const ATTACH_SLOTS_BY_TYPE = {
@@ -599,250 +748,423 @@ const ATTACH_SLOTS_BY_TYPE = {
   MELEE: []
 };
 
-/* SOLO vs SQUAD missions */
-const SOLO_MISSIONS = {
-  easy: {
-    objective: [
-      "Complete 1 contract and exfil",
-      "Clear 1 Stronghold and exfil",
-      "Loot 1 locked space and exfil",
-      "Extract with $20,000+ cash/value",
-      "Extract 3 valuables (any type)"
-    ],
-    approach: [
-      "Pick the closest contract and commit; don’t cross the whole map",
-      "Plates first, then objective. Reset early if it gets messy",
-      "Use smoke for rotations; avoid open crossings when possible",
-      "Route: objective → quick loot → exfil (no greedy detours)",
-      "If the lobby is hot, downshift to survival and take the safe exfil"
-    ],
-    constraint: [
-      "Avoid PvP unless fired upon",
-      "No UAV Towers",
-      "No vehicles",
-      "Stay within one POI area",
-      "No constraint (clean run)"
-    ],
-    bonus: [
-      "Exfil first available chopper",
-      "Extract without going down",
-      "Extract with full plates",
-      "Revive someone before exfil (if possible)",
-      "No bonus (clean run)"
-    ]
-  },
-  normal: {
-    objective: [
-      "Complete 2 contracts and exfil",
-      "Clear 1 Stronghold + complete 1 contract",
-      "Loot 1 locked space + extract $20,000+",
-      "Extract with $30,000+ cash/value",
-      "Extract 5 valuables (any type)"
-    ],
-    approach: [
-      "Run two contracts in nearby POIs; avoid long rotations",
-      "Stronghold only after you have plates/ammo; leave if it’s messy",
-      "Grab the objective items, then instantly rotate to exfil",
-      "If you get into a fight, finish it fast or disengage—no ego",
-      "Use one POI as your base; treat everything else as optional"
-    ],
-    constraint: [
-      "No Buy Stations",
-      "No UAV Towers",
-      "Avoid PvP unless fired upon",
-      "No vehicles",
-      "One weapon only",
-      "Must cross a river/canal at least once"
-    ],
-    bonus: [
-      "Exfil without using a field upgrade",
-      "Extract with at least 2 spare plate stacks",
-      "Use only one ammo resupply (box or station)",
-      "No bonus (clean run)"
-    ]
-  },
-  spicy: {
-    objective: [
-      "Complete 3 contracts",
-      "Clear 2 Strongholds",
-      "Extract with $40,000+ cash/value",
-      "Loot 2 locked spaces",
-      "Acquire any killstreak in-match and exfil with it"
-    ],
-    approach: [
-      "Pick a tight triangle route: contract → contract → exfil",
-      "If you take a fight, commit—don’t bleed plates in a stalemate",
-      "Use rotations + smoke to cross open areas; avoid predictable lines",
-      "If the raid turns chaotic, reset early; don’t throw the run",
-      "Treat final exfil as optional unless it’s clearly safe"
-    ],
-    constraint: [
-      "No Buy Stations",
-      "No UAV Towers",
-      "No vehicles",
-      "One weapon only",
-      "No suppressors",
-      "Avoid PvP unless fired upon"
-    ],
-    bonus: [
-      "Exfil at final chopper (if safe)",
-      "Extract without dying (full run)",
-      "Revive a teammate/operator (if possible)",
-      "No bonus (clean run)"
-    ]
-  }
+const ATTACH_PRESETS = {
+  STEALTH: ["MUZZLE","BARREL","UNDERBARREL","OPTIC","MAGAZINE"],
+  RECOIL: ["MUZZLE","UNDERBARREL","STOCK","REAR_GRIP","OPTIC"],
+  ADS: ["LASER","STOCK","REAR_GRIP","BARREL","OPTIC"],
+  RANGE: ["MUZZLE","BARREL","OPTIC","UNDERBARREL","AMMO"]
 };
 
-const SQUAD_MISSIONS = {
-  easy: {
-    objective: [
-      "As a squad, complete 2 contracts and exfil together",
-      "Clear 1 Stronghold as a squad and exfil together",
-      "Squad must extract $40,000+ combined value",
-      "Complete 1 contract and exfil with all squad members alive",
-      "Secure 1 locked space and exfil together"
-    ],
-    approach: [
-      "Assign roles: entry (front), support (plates), anchor (rear). Move as a unit",
-      "Call targets and plate breaks—no silent fights",
-      "Rotate together; if one lags, the whole squad slows",
-      "Stack streaks/boxes: one drops munitions, one drops armor",
-      "If engaged, two hold angles while one flanks or smokes"
-    ],
-    constraint: [
-      "Stay within 50 meters of at least one teammate at all times",
-      "No splitting into 1v1 fights (must push as 2+)",
-      "No UAV Towers",
-      "No vehicles",
-      "No Buy Stations"
-    ],
-    bonus: [
-      "Exfil with all three players and no one goes down",
-      "Win one squad fight then immediately exfil",
-      "Extract with 3 spare self-revives across the team",
-      "No bonus (clean run)"
-    ]
-  },
-  normal: {
-    objective: [
-      "Complete 3 contracts as a squad and exfil together",
-      "Clear 2 Strongholds and extract a key item (any valuable) as a team",
-      "Squad must extract $60,000+ combined value",
-      "Acquire a killstreak for each teammate and exfil together",
-      "Complete a contract, then immediately complete a second contract in a different POI"
-    ],
-    approach: [
-      "Use comms discipline: short callouts, confirm downs, confirm wipes",
-      "One player carries smokes; one carries stuns; one carries lethals",
-      "If one gets cracked, rotate and re-plate before re-peeking",
-      "Avoid long looting—objective first, then quick sweep, then rotate",
-      "Two hold, one moves: never all three crossing open ground at once"
-    ],
-    constraint: [
-      "Must revive a teammate at least once (if possible) before exfil",
-      "No Buy Stations",
-      "No UAV Towers",
-      "No vehicles",
-      "Two teammates must use different weapon classes (e.g., SMG + Sniper)"
-    ],
-    bonus: [
-      "Exfil at final chopper (only if safe)",
-      "Extract with all teammates having 3-plates (any kind)",
-      "Complete one hunt-style engagement then disengage and exfil",
-      "No bonus (clean run)"
-    ]
-  },
-  spicy: {
-    objective: [
-      "As a squad, complete 4 contracts OR 3 contracts + 2 Strongholds",
-      "Squad must extract $80,000+ combined value",
-      "Win a full squad fight (wipe) and then complete 2 contracts",
-      "Clear 2 Strongholds, loot 2 locked spaces, and exfil together",
-      "Do a ‘rescue run’: revive another operator team member (assimilation ok) and exfil together"
-    ],
-    approach: [
-      "Run a real execute: entry pair + overwatch. Move on countdowns",
-      "If a fight stalls past 30 seconds, reposition—don’t bleed plates",
-      "Use smokes to cross; use stuns to break corners; finish downs fast",
-      "Always keep one player as anchor watching third-party angles",
-      "Commit to rotations—don’t get baited into endless roof wars"
-    ],
-    constraint: [
-      "No Buy Stations",
-      "No UAV Towers",
-      "No vehicles",
-      "Stay within 40 meters of a teammate at all times",
-      "Must take and win at least one squad engagement before exfil"
-    ],
-    bonus: [
-      "Final exfil (only if safe)",
-      "Extract without any teammate dying (full wipe avoided)",
-      "Extract with 2+ killstreaks across the squad",
-      "No bonus (clean run)"
-    ]
+function niceSlotName(slotKey){
+  return ({OPTIC:"Optic",MUZZLE:"Muzzle",BARREL:"Barrel",UNDERBARREL:"Underbarrel",MAGAZINE:"Magazine",LASER:"Laser",STOCK:"Stock",REAR_GRIP:"Rear Grip",AMMO:"Ammunition",BOLT:"Bolt",GUARD:"Guard",TRIGGER:"Trigger"})[slotKey] || slotKey;
+}
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function getWeaponType(weaponName){
+  if(WEAPON_TYPE.LAUNCHER.has(weaponName)) return "LAUNCHER";
+  if(WEAPON_TYPE.MELEE.has(weaponName)) return "MELEE";
+  if(WEAPON_TYPE.SHOTGUN.has(weaponName)) return "SHOTGUN";
+  if(WEAPON_TYPE.PISTOL.has(weaponName)) return "PISTOL";
+  if(WEAPON_TYPE.SPECIAL.has(weaponName)) return "SPECIAL";
+  return "RIFLE";
+}
+
+function rollAttachmentsForWeapon(weaponName, metaScore01){
+  const type = getWeaponType(weaponName);
+  const slots = ATTACH_SLOTS_BY_TYPE[type] || [];
+  if(!slots.length) return [];
+
+  const isMeta = metaScore01 >= 0.67;
+  const isMeme = metaScore01 <= 0.33;
+
+  let chosenSlots = [];
+  if(isMeta){
+    const preset = pick(Object.keys(ATTACH_PRESETS));
+    chosenSlots = ATTACH_PRESETS[preset].filter(s => slots.includes(s)).slice(0,5);
+  }else if(isMeme){
+    const shuffled = slots.slice().sort(()=>Math.random()-0.5);
+    chosenSlots = shuffled.slice(0, Math.min(5, shuffled.length));
+  }else{
+    const shuffled = slots.slice().sort(()=>Math.random()-0.5);
+    chosenSlots = shuffled.slice(0, Math.min(5, shuffled.length));
   }
+
+  const att = [];
+  for(const slotKey of chosenSlots){
+    const pool = ATTACH_POOLS[slotKey] || [];
+    if(!pool.length) continue;
+    att.push({ slot: slotKey, name: pick(pool) });
+  }
+  return att;
+}
+
+/* =========================
+   MAP FLAVOR
+========================= */
+const MAPS = {
+  any: { name:"Any", pois:["a major POI","a quiet district","a fortified area","a riverside sector"] },
+  al:  { name:"Al Mazrah", pois:["Al Mazrah City","Rohan Oil","Al Sharim Pass","Sattiq Caves","Zaya Observatory","Sawah Village","Hydroelectric"] },
+  ash: { name:"Ashika", pois:["Tsuki Castle","Port Ashika","Residential","Beach Club","Shipwreck","Town Center"] },
+  von: { name:"Vondel", pois:["Central Station","Market","Castle","University","Police Station","Zoo","Stadium"] }
 };
 
-const ORDER_BASE = ["Primary","Secondary","Tactical","Lethal","Field Upgrade"];
-const ORDER_EXTRA = ["Vest","Backpack","Revive","Mask"];
+/* =========================
+   DMZ-AUTHENTIC MISSION TEMPLATES
+========================= */
+const CONTRACTS = ["HVT","Secure Intel","Hostage Rescue","Raid Weapon Stash"];
+const SYSTEMS = {
+  deadDrops: ["a dead drop","a dumpster dead drop","a police station dead drop"],
+  stronghold: "a Stronghold",
+  uav: "a UAV Tower",
+  buy: "a Buy Station",
+  locked: "a locked space"
+};
 
-const state = { seed:null, regain:false, attachments:false, squad:false, difficulty:0 };
+function randSeed(){ return Math.random().toString(36).slice(2, 8).toUpperCase(); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+function difficultyKey(){ return state.difficulty === 0 ? "easy" : (state.difficulty === 1 ? "normal" : "spicy"); }
+
+function chooseFaction(){
+  const diff = difficultyKey();
+  const pool = [];
+  for(const f of FACTIONS){
+    let w = 1;
+    if(f.name === "Crown") w = (diff === "spicy" ? 3 : (diff === "normal" ? 2 : 1));
+    if(f.name === "Black Mous") w = (diff === "normal" ? 2 : 1);
+    for(let i=0;i<w;i++) pool.push(f);
+  }
+  return pick(pool);
+}
+
+function missionTemplate_ContractRun(faction, map, mode){
+  const c1 = pick(CONTRACTS);
+  const c2 = pick(CONTRACTS.filter(x=>x!==c1));
+  const poi = pick(map.pois);
+  const obj = [];
+
+  if(difficultyKey() === "easy"){
+    obj.push(`${faction.verbs.secure} a ${c1} contract and complete it.`);
+    obj.push(`${faction.verbs.exfil} successfully.`);
+  }else if(difficultyKey() === "normal"){
+    obj.push(`${faction.verbs.secure} a ${c1} contract and complete it (same deployment).`);
+    obj.push(`${faction.verbs.secure} a second contract (${c2}) and complete it (same deployment).`);
+    obj.push(`${faction.verbs.exfil} successfully.`);
+  }else{
+    obj.push(`${faction.verbs.secure} a ${c1} contract at ${poi} and complete it (same deployment).`);
+    obj.push(`${faction.verbs.secure} a second contract (${c2}) and complete it (same deployment).`);
+    obj.push(`${faction.verbs.secure} ${SYSTEMS.stronghold} and clear it (same deployment).`);
+    obj.push(`${faction.verbs.exfil} successfully.`);
+  }
+
+  const constraints = [];
+  if(mode === "squad") constraints.push("All squad members must exfil on the same helicopter.");
+  constraints.push("Avoid unnecessary PvP—fight only when required.");
+  if(difficultyKey() !== "easy") constraints.push(`No ${SYSTEMS.uav}.`);
+
+  const bonus = (difficultyKey()==="spicy") ? "Final exfil only (if safe)." : "Exfil at the first available helicopter.";
+
+  return {
+    title: (mode==="squad" ? "Coordinated Contract Sweep" : "Contract Sweep"),
+    subtitle: `Faction: ${faction.name} • Focus: contracts • Map: ${map.name}`,
+    objectives: obj,
+    constraints,
+    bonus
+  };
+}
+
+function missionTemplate_DeadDropLogistics(faction, map, mode){
+  const dd = pick(SYSTEMS.deadDrops);
+  const poi = pick(map.pois);
+  const obj = [];
+  if(difficultyKey()==="easy"){
+    obj.push(`${faction.verbs.acquire} a valuable item.`);
+    obj.push(`${faction.verbs.deliver} it into ${dd}.`);
+    obj.push(`${faction.verbs.exfil} successfully.`);
+  }else if(difficultyKey()==="normal"){
+    obj.push(`${faction.verbs.acquire} an item and ${faction.verbs.deliver} it into ${dd} (same deployment).`);
+    obj.push(`${faction.verbs.secure} a contract phone and complete any contract (same deployment).`);
+    obj.push(`${faction.verbs.exfil} successfully.`);
+  }else{
+    obj.push(`${faction.verbs.acquire} two valuables and ${faction.verbs.deliver} both into ${dd} (same deployment).`);
+    obj.push(`${faction.verbs.secure} ${SYSTEMS.locked} at ${poi} and loot it (same deployment).`);
+    obj.push(`${faction.verbs.exfil} successfully with $40,000+ cash/value.`);
+  }
+
+  const constraints = [];
+  constraints.push(`No ${SYSTEMS.buy}.`);
+  if(mode==="squad") constraints.push("One teammate carries valuables while another provides overwatch.");
+  if(difficultyKey()==="spicy") constraints.push("No vehicles.");
+
+  const bonus = "Extract without any teammate going down (or reset).";
+
+  return {
+    title: "Black Market Logistics",
+    subtitle: `Faction: ${faction.name} • Focus: dead drops • Map: ${map.name}`,
+    objectives: obj,
+    constraints,
+    bonus
+  };
+}
+
+function missionTemplate_IntelOps(faction, map, mode){
+  const poi = pick(map.pois);
+  const obj = [];
+  if(difficultyKey()==="easy"){
+    obj.push(`${faction.verbs.acquire} an intel item (notes/document).`);
+    obj.push(`${faction.verbs.exfil} with the intel.`);
+  }else if(difficultyKey()==="normal"){
+    obj.push(`${faction.verbs.secure} a Secure Intel contract and complete the upload (same deployment).`);
+    obj.push(`${faction.verbs.acquire} any intel item and ${faction.verbs.exfil} with it (same deployment).`);
+  }else{
+    obj.push(`${faction.verbs.secure} a Secure Intel contract at ${poi} and complete the upload (same deployment).`);
+    obj.push(`${faction.verbs.secure} ${SYSTEMS.stronghold} and clear it (same deployment).`);
+    obj.push(`${faction.verbs.exfil} successfully on final exfil (if safe).`);
+  }
+
+  const constraints = [];
+  constraints.push("Avoid PvP unless fired upon.");
+  if(mode==="squad") constraints.push("Stay within 50m of a teammate during the upload.");
+  if(difficultyKey()!=="easy") constraints.push(`No ${SYSTEMS.uav}.`);
+
+  const bonus = "No field upgrades used during the mission.";
+
+  return {
+    title: "Verified Intel",
+    subtitle: `Faction: ${faction.name} • Focus: intel • Map: ${map.name}`,
+    objectives: obj,
+    constraints,
+    bonus
+  };
+}
+
+function missionTemplate_StrongholdPressure(faction, map, mode){
+  const poi = pick(map.pois);
+  const obj = [];
+  if(difficultyKey()==="easy"){
+    obj.push(`${faction.verbs.clear} ${SYSTEMS.stronghold}.`);
+    obj.push(`${faction.verbs.exfil} successfully.`);
+  }else if(difficultyKey()==="normal"){
+    obj.push(`${faction.verbs.clear} ${SYSTEMS.stronghold} and loot it (same deployment).`);
+    obj.push(`${faction.verbs.secure} any contract and complete it (same deployment).`);
+    obj.push(`${faction.verbs.exfil} successfully.`);
+  }else{
+    obj.push(`${faction.verbs.clear} two Strongholds (same deployment).`);
+    obj.push(`${faction.verbs.secure} a ${pick(CONTRACTS)} contract at ${poi} and complete it (same deployment).`);
+    obj.push(`${faction.verbs.exfil} on final exfil (if safe).`);
+  }
+
+  const constraints = [];
+  constraints.push(`No ${SYSTEMS.buy}.`);
+  if(mode==="squad") constraints.push("Each teammate must enter the Stronghold at least once during the clear.");
+  if(difficultyKey()==="spicy") constraints.push("One-weapon rule: only use your Primary weapon.");
+
+  const bonus = "Extract with full plates.";
+
+  return {
+    title: "Breach & Clear",
+    subtitle: `Faction: ${faction.name} • Focus: strongholds • Map: ${map.name}`,
+    objectives: obj,
+    constraints,
+    bonus
+  };
+}
+
+function missionTemplate_HighValueExtraction(faction, map, mode){
+  const obj = [];
+  if(difficultyKey()==="easy"){
+    obj.push(`${faction.verbs.acquire} $20,000+ cash/value.`);
+    obj.push(`${faction.verbs.exfil} successfully.`);
+  }else if(difficultyKey()==="normal"){
+    obj.push(`${faction.verbs.acquire} $30,000+ cash/value (same deployment).`);
+    obj.push(`${faction.verbs.secure} any contract and complete it (same deployment).`);
+    obj.push(`${faction.verbs.exfil} successfully.`);
+  }else{
+    obj.push(`${faction.verbs.acquire} $40,000+ cash/value (same deployment).`);
+    obj.push(`${faction.verbs.secure} ${SYSTEMS.locked} and loot it (same deployment).`);
+    obj.push(`${faction.verbs.exfil} on final exfil (if safe).`);
+  }
+
+  const constraints = [];
+  constraints.push(`No ${SYSTEMS.uav}.`);
+  if(difficultyKey()!=="easy") constraints.push(`No ${SYSTEMS.buy}.`);
+  if(mode==="squad") constraints.push("Total value is combined across the squad at exfil.");
+
+  const bonus = "Extract 2 valuables in your backpack.";
+
+  return {
+    title: "High-Value Extraction",
+    subtitle: `Faction: ${faction.name} • Focus: value • Map: ${map.name}`,
+    objectives: obj,
+    constraints,
+    bonus
+  };
+}
+
+function buildMission(){
+  const map = MAPS[state.mapFlavor] || MAPS.any;
+  const faction = state.factionObj;
+  const mode = state.squad ? "squad" : "solo";
+
+  const templates = [];
+  const add = (fn, w)=>{ for(let i=0;i<w;i++) templates.push(fn); };
+
+  if(faction.name==="White Lotus"){
+    add(missionTemplate_IntelOps, 4);
+    add(missionTemplate_ContractRun, 2);
+    add(missionTemplate_StrongholdPressure, 1);
+  }else if(faction.name==="Black Mous"){
+    add(missionTemplate_DeadDropLogistics, 4);
+    add(missionTemplate_ContractRun, 2);
+    add(missionTemplate_HighValueExtraction, 1);
+  }else if(faction.name==="Legion"){
+    add(missionTemplate_StrongholdPressure, 3);
+    add(missionTemplate_ContractRun, 3);
+    add(missionTemplate_HighValueExtraction, 1);
+  }else{
+    add(missionTemplate_HighValueExtraction, 4);
+    add(missionTemplate_ContractRun, 2);
+    add(missionTemplate_StrongholdPressure, 1);
+  }
+
+  return pick(templates)(faction, map, mode);
+}
+
+/* =========================
+   CHAINS
+========================= */
+const CHAINS = [
+  {
+    id: "bm_arms_courier",
+    name: "Arms Courier",
+    faction: "Black Mous",
+    modes: ["solo","squad"],
+    briefing: "Black Mous needs a weapon moved between zones. Don’t lose the asset.",
+    steps: [
+      { title:"Acquisition", objectives:["Extract with your current Primary weapon (the ‘asset’).","Do not swap Primary weapons before exfil."], constraints:["If you lose the Primary weapon, the step fails."], bonus:"Exfil first available helicopter." },
+      { title:"Transport", objectives:["In a new deployment, infil with the same Primary weapon.","Extract again with the same Primary weapon."], constraints:["If the weapon is lost, the chain resets.","No UAV Towers."], bonus:"No Buy Stations." },
+      { title:"Delivery", objectives:["Get 3 operator kills with the asset weapon (same deployment).","Exfil successfully."], constraints:["If you go down, disengage and re-plate before re-engaging."], bonus:"Final exfil only (if safe)." }
+    ]
+  },
+  {
+    id: "wl_verified_intel_chain",
+    name: "Verified Intel",
+    faction: "White Lotus",
+    modes: ["solo","squad"],
+    briefing: "White Lotus requires verified information from the field. Keep it clean.",
+    steps: [
+      { title:"Collection", objectives:["Acquire any intel item (notes/document).","Exfil with it."], constraints:["Avoid PvP unless fired upon."], bonus:"No field upgrades." },
+      { title:"Verification", objectives:["In a new deployment, complete a Secure Intel contract.","Exfil successfully."], constraints:["No UAV Towers."], bonus:"No vehicles." },
+      { title:"Extraction", objectives:["Complete any contract (same deployment).","Exfil on final exfil (if safe)."], constraints:["No Buy Stations."], bonus:"No downs." }
+    ]
+  }
+];
+
+/* =========================
+   STATE
+========================= */
+const state = {
+  seed: null,
+  regain: false,
+  attachments: false,
+  squad: false,
+  chains: false,
+  difficulty: 0,
+  mapFlavor: "any",
+  memeMeta: 50,
+  factionObj: null,
+  activeChainId: null,
+  activeChainStep: 0
+};
+
+/* =========================
+   ELEMENTS
+========================= */
 const elSeed = document.getElementById("seedLabel");
 const toast = document.getElementById("toast");
+
 const elLoadoutHeadline = document.getElementById("loadoutHeadline");
 const elMissionHeadline = document.getElementById("missionHeadline");
+
 const elBaseSlots = document.getElementById("baseLoadoutSlots");
 const elExtraWrap = document.getElementById("extraGearWrap");
 const elExtraSlots = document.getElementById("extraLoadoutSlots");
-const elMissionBody = document.getElementById("missionBody");
+
+const elMissionBadges = document.getElementById("missionBadges");
+const elFactionBriefing = document.getElementById("factionBriefing");
+const elChainBlock = document.getElementById("chainBlock");
+
+const elMissionTitle = document.getElementById("missionTitle");
+const elMissionSubtitle = document.getElementById("missionSubtitle");
+const elMissionObjectives = document.getElementById("missionObjectives");
+const elMissionConstraints = document.getElementById("missionConstraints");
+const elMissionBonus = document.getElementById("missionBonus");
+
 const diffSlider = document.getElementById("diffSlider");
 const diffLabel = document.getElementById("diffLabel");
 const diffHint = document.getElementById("diffHint");
 const modePill = document.getElementById("modePill");
 
+const mmSlider = document.getElementById("mmSlider");
+const mmLabel = document.getElementById("mmLabel");
+const mmHint = document.getElementById("mmHint");
+
+const exportFormatEl = document.getElementById("exportFormat");
+const mapFlavorEl = document.getElementById("mapFlavor");
+
 const modalOverlay = document.getElementById("modalOverlay");
 const modalGrid = document.getElementById("modalGrid");
 
+const dailyCard = document.getElementById("dailyCard");
+const dailyHeadline = document.getElementById("dailyHeadline");
+const dailyBody = document.getElementById("dailyBody");
+const dailyBadges = document.getElementById("dailyBadges");
+const dailyResetPill = document.getElementById("dailyResetPill");
+
+/* =========================
+   UTILS
+========================= */
 function showToast(msg){
   toast.textContent = msg;
   toast.classList.add("show");
   setTimeout(()=>toast.classList.remove("show"), 1200);
 }
-function randSeed(){ return Math.random().toString(36).slice(2, 8).toUpperCase(); }
-function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function setSwitch(el, on){
+  el.dataset.on = on ? "true" : "false";
+  el.setAttribute("aria-checked", on ? "true" : "false");
 }
-function difficultyKey(){
-  return state.difficulty === 0 ? "easy" : (state.difficulty === 1 ? "normal" : "spicy");
+function nowLocalISODate(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
 }
-function updateDifficultyUI(){
-  const labels = ["Easy","Normal","Spicy"];
-  const hints = ["High completion","Balanced","More demanding"];
-  diffLabel.textContent = labels[state.difficulty];
-  diffHint.textContent = hints[state.difficulty];
-  diffSlider.value = String(state.difficulty);
+function msUntilLocalMidnight(){
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(24,0,0,0);
+  return next.getTime() - now.getTime();
 }
+function fmtDuration(ms){
+  const s = Math.max(0, Math.floor(ms/1000));
+  const h = Math.floor(s/3600);
+  const m = Math.floor((s%3600)/60);
+  return `${h}h ${m}m`;
+}
+function metaScore01(){ return Math.max(0, Math.min(1, state.memeMeta/100)); }
+
+/* =========================
+   POOLS
+========================= */
 function normalizeList(text){
-  return Array.from(new Set(
-    String(text || "")
-      .split("\n")
-      .map(x=>x.trim())
-      .filter(Boolean)
-  ));
+  return Array.from(new Set(String(text||"").split("\n").map(x=>x.trim()).filter(Boolean)));
 }
 function loadPools(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY_POOLS);
     if(!raw) return structuredClone(DEFAULT_POOLS);
     const parsed = JSON.parse(raw);
-
-    // Back-compat: if someone had ALL_WEAPONS saved from an older version, map it into PRIMARY_WEAPONS.
-    if(parsed && Array.isArray(parsed.ALL_WEAPONS) && (!parsed.PRIMARY_WEAPONS || !Array.isArray(parsed.PRIMARY_WEAPONS))){
-      parsed.PRIMARY_WEAPONS = parsed.ALL_WEAPONS;
-    }
-
     const merged = { ...structuredClone(DEFAULT_POOLS), ...parsed };
     for(const k of Object.keys(merged)){
       if(!Array.isArray(merged[k])) merged[k] = [];
@@ -859,58 +1181,174 @@ function savePools(pools){
     if(!Array.isArray(safe[k])) safe[k] = [];
     safe[k] = Array.from(new Set(safe[k].map(x=>String(x).trim()).filter(Boolean)));
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(safe, null, 2));
+  localStorage.setItem(STORAGE_KEY_POOLS, JSON.stringify(safe, null, 2));
 }
 function getPools(){ return loadPools(); }
 
-function getWeaponType(weaponName){
-  if(WEAPON_TYPE.LAUNCHER.has(weaponName)) return "LAUNCHER";
-  if(WEAPON_TYPE.MELEE.has(weaponName)) return "MELEE";
-  if(WEAPON_TYPE.SHOTGUN.has(weaponName)) return "SHOTGUN";
-  if(WEAPON_TYPE.PISTOL.has(weaponName)) return "PISTOL";
-  if(WEAPON_TYPE.SPECIAL.has(weaponName)) return "SPECIAL";
-  if(WEAPON_TYPE.RIFLE.has(weaponName)) return "RIFLE";
-  return "RIFLE"; // fallback for any custom-added weapons
+/* =========================
+   APP STATE
+========================= */
+function saveAppState(){
+  try{
+    localStorage.setItem(STORAGE_KEY_APP, JSON.stringify({
+      regain: state.regain,
+      attachments: state.attachments,
+      squad: state.squad,
+      chains: state.chains,
+      difficulty: state.difficulty,
+      mapFlavor: state.mapFlavor,
+      memeMeta: state.memeMeta,
+      activeChainId: state.activeChainId,
+      activeChainStep: state.activeChainStep,
+      exportFormat: exportFormatEl.value
+    }));
+  }catch{}
 }
-function rollAttachmentsForWeapon(weaponName){
-  const type = getWeaponType(weaponName);
-  const slots = ATTACH_SLOTS_BY_TYPE[type] || [];
-  if(!slots.length) return [];
-  const shuffledSlots = slots.slice().sort(()=>Math.random()-0.5);
-  const takeN = Math.min(5, shuffledSlots.length);
-  const chosenSlots = shuffledSlots.slice(0, takeN);
-  const att = [];
-  for(const slotKey of chosenSlots){
-    const pool = ATTACH_POOLS[slotKey] || [];
-    if(!pool.length) continue;
-    att.push({ slot: slotKey, name: pick(pool) });
-  }
-  return att;
-}
-function niceSlotName(slotKey){
-  return ({
-    OPTIC:"Optic",
-    MUZZLE:"Muzzle",
-    BARREL:"Barrel",
-    UNDERBARREL:"Underbarrel",
-    MAGAZINE:"Magazine",
-    LASER:"Laser",
-    STOCK:"Stock",
-    REAR_GRIP:"Rear Grip",
-    AMMO:"Ammunition",
-    BOLT:"Bolt",
-    GUARD:"Guard",
-    TRIGGER:"Trigger"
-  })[slotKey] || slotKey;
+function loadAppState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY_APP);
+    if(!raw) return;
+    const o = JSON.parse(raw);
+    if(typeof o.regain==="boolean") state.regain=o.regain;
+    if(typeof o.attachments==="boolean") state.attachments=o.attachments;
+    if(typeof o.squad==="boolean") state.squad=o.squad;
+    if(typeof o.chains==="boolean") state.chains=o.chains;
+    if(Number.isFinite(o.difficulty)) state.difficulty=o.difficulty;
+    if(typeof o.mapFlavor==="string") state.mapFlavor=o.mapFlavor;
+    if(Number.isFinite(o.memeMeta)) state.memeMeta=o.memeMeta;
+    if(typeof o.activeChainId==="string") state.activeChainId=o.activeChainId;
+    if(Number.isFinite(o.activeChainStep)) state.activeChainStep=o.activeChainStep;
+    if(typeof o.exportFormat==="string") exportFormatEl.value=o.exportFormat;
+  }catch{}
 }
 
-/* Loadout generation (Primary + true Secondary pool) */
+/* =========================
+   POOLS MODAL
+========================= */
+const POOL_FIELDS = [
+  ["PRIMARY_WEAPONS","Primary Weapons (full pool)","Everything eligible for PRIMARY. One per line."],
+  ["SECONDARY_WEAPONS","Secondary Weapons (limited)","Only items eligible for SECONDARY (handguns/launchers/melee). One per line."],
+  ["TACTICAL","Tactical","One per line."],
+  ["LETHAL","Lethal","One per line."],
+  ["FIELD_UPGRADE","Field Upgrade","One per line."],
+  ["VEST","Vest (Regain extra slot)","Only appears when Regain is ON."],
+  ["BACKPACK","Backpack (Regain extra slot)","Only appears when Regain is ON."],
+  ["REVIVE","Revive (Regain extra slot)","Only appears when Regain is ON."],
+  ["MASK","Mask (Regain extra slot)","Only appears when Regain is ON."]
+];
+function openModal(){
+  renderPoolsEditor();
+  modalOverlay.classList.add("show");
+  modalOverlay.setAttribute("aria-hidden","false");
+}
+function closeModal(){
+  modalOverlay.classList.remove("show");
+  modalOverlay.setAttribute("aria-hidden","true");
+}
+function renderPoolsEditor(){
+  const pools = getPools();
+  modalGrid.innerHTML = "";
+  for(const [key,title,hint] of POOL_FIELDS){
+    const box = document.createElement("div");
+    box.className = "poolBox";
+    box.innerHTML = `
+      <h5>${escapeHtml(title)}</h5>
+      <div class="hint">${escapeHtml(hint)}</div>
+      <textarea id="ta_${key}" spellcheck="false"></textarea>
+    `;
+    modalGrid.appendChild(box);
+    box.querySelector("textarea").value = (pools[key] ?? []).join("\n");
+  }
+}
+function saveFromEditor(){
+  const next = {};
+  for(const [key] of POOL_FIELDS){
+    const ta = document.getElementById("ta_" + key);
+    next[key] = normalizeList(ta ? ta.value : "");
+  }
+  savePools(next);
+  showToast("Pools saved");
+}
+async function copyPoolsJson(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY_POOLS) || JSON.stringify(getPools(), null, 2);
+    await navigator.clipboard.writeText(raw);
+    showToast("Copied JSON");
+  }catch{
+    showToast("Copy failed");
+  }
+}
+function resetPools(){
+  localStorage.removeItem(STORAGE_KEY_POOLS);
+  renderPoolsEditor();
+  showToast("Defaults restored");
+}
+
+/* =========================
+   UI HELPERS
+========================= */
+function updateDifficultyUI(){
+  const labels = ["Easy","Normal","Spicy"];
+  const hints = ["High completion","Balanced","More demanding"];
+  diffLabel.textContent = labels[state.difficulty];
+  diffHint.textContent = hints[state.difficulty];
+  diffSlider.value = String(state.difficulty);
+}
+function updateMemeMetaUI(){
+  mmSlider.value = String(state.memeMeta);
+  mmHint.textContent = `${state.memeMeta}%`;
+  if(state.memeMeta <= 33) mmLabel.textContent = "Meme";
+  else if(state.memeMeta >= 67) mmLabel.textContent = "Meta";
+  else mmLabel.textContent = "Balanced";
+}
+
+function renderBadges(faction){
+  const diffTone = state.difficulty===2 ? "danger" : (state.difficulty===1 ? "warn" : "ok");
+  const badges = [
+    {text:`Faction: ${faction.name}`, tone:faction.tone},
+    {text:`Difficulty: ${["Easy","Normal","Spicy"][state.difficulty]}`, tone:diffTone},
+    {text:`Chains: ${state.chains ? "ON" : "OFF"}`, tone: state.chains ? "warn" : "ok"},
+    {text:`Meme↔Meta: ${state.memeMeta}%`, tone: state.memeMeta<=33 ? "warn" : "ok"}
+  ];
+  elMissionBadges.innerHTML = badges.map(b=>`<span class="badge ${b.tone}"><span class="bDot"></span>${escapeHtml(b.text)}</span>`).join("");
+}
+
+function renderMission(m){
+  elMissionTitle.textContent = m.title || "—";
+  elMissionSubtitle.textContent = m.subtitle || "—";
+  const obj = (m.objectives || []).slice(0, 10);
+  elMissionObjectives.innerHTML = obj.length ? obj.map(x=>`<li>${escapeHtml(x)}</li>`).join("") : "<li>—</li>";
+  const con = (m.constraints || []).slice(0, 10);
+  elMissionConstraints.innerHTML = con.length ? con.map(x=>`<li>${escapeHtml(x)}</li>`).join("") : "<li>—</li>";
+  elMissionBonus.textContent = m.bonus || "—";
+}
+
+/* =========================
+   LOADOUT
+========================= */
+function weightedPickPrimary(primaryPool){
+  const pMeta = metaScore01();
+  const isMeta = Math.random() < pMeta;
+  const metaCandidates = primaryPool.filter(w => META_PRIMARY.has(w));
+  const memeCandidates = primaryPool.filter(w => MEME_PRIMARY.has(w));
+  const other = primaryPool.filter(w => !META_PRIMARY.has(w) && !MEME_PRIMARY.has(w));
+
+  if(isMeta){
+    if(metaCandidates.length) return pick(metaCandidates);
+    return pick(primaryPool);
+  }else{
+    if(memeCandidates.length) return pick(memeCandidates);
+    if(other.length) return pick(other);
+    return pick(primaryPool);
+  }
+}
+
 function generateLoadout(pools){
   const primaryPool = pools.PRIMARY_WEAPONS ?? [];
   const secondaryPool = pools.SECONDARY_WEAPONS ?? [];
 
-  const primary = pick(primaryPool) || "—";
-  const secondary = pick(secondaryPool) || "—";
+  const primary = primaryPool.length ? weightedPickPrimary(primaryPool) : "—";
+  const secondary = secondaryPool.length ? pick(secondaryPool) : "—";
 
   const base = {
     Primary: primary,
@@ -930,26 +1368,18 @@ function generateLoadout(pools){
 
   const attachments = {};
   if(state.attachments){
-    attachments.Primary = rollAttachmentsForWeapon(primary);
-    attachments.Secondary = rollAttachmentsForWeapon(secondary);
+    const m = metaScore01();
+    attachments.Primary = rollAttachmentsForWeapon(primary, m);
+    attachments.Secondary = rollAttachmentsForWeapon(secondary, m);
   }
 
   return { base, extra, attachments };
 }
 
-/* Mission generation */
-function generateMission(){
-  const key = difficultyKey();
-  const bank = state.squad ? SQUAD_MISSIONS[key] : SOLO_MISSIONS[key];
-  return {
-    Objective: pick(bank.objective),
-    Approach: pick(bank.approach),
-    Constraint: pick(bank.constraint),
-    "Optional Bonus": pick(bank.bonus)
-  };
-}
-
 function renderLoadout(loadout){
+  const ORDER_BASE = ["Primary","Secondary","Tactical","Lethal","Field Upgrade"];
+  const ORDER_EXTRA = ["Vest","Backpack","Revive","Mask"];
+
   elBaseSlots.innerHTML = ORDER_BASE.map(k=>{
     const v = loadout.base[k] ?? "—";
     const isWeapon = (k === "Primary" || k === "Secondary");
@@ -960,9 +1390,7 @@ function renderLoadout(loadout){
       <div class="attach">
         <div class="attachTitle">Attachments</div>
         <div class="attachList">
-          ${att.map(a=>`
-            <div class="attachItem"><span>${escapeHtml(niceSlotName(a.slot))}</span>${escapeHtml(a.name)}</div>
-          `).join("")}
+          ${att.map(a=>`<div class="attachItem"><span>${escapeHtml(niceSlotName(a.slot))}</span>${escapeHtml(a.name)}</div>`).join("")}
         </div>
       </div>
     ` : (state.attachments && isWeapon ? `
@@ -999,102 +1427,256 @@ function renderLoadout(loadout){
   }
 }
 
-function renderMission(m){
-  const modeLine = state.squad ? "Squad mission (requires teammates)" : "Solo mission";
-  const lines = [
-    {k:"Objective", hint: modeLine},
-    {k:"Approach", hint:"How to execute it (routing / pace / priorities)."},
-    {k:"Constraint", hint:"Rule that adds tension without being impossible."},
-    {k:"Optional Bonus", hint:"Extra spice only if the raid is calm."}
+/* =========================
+   CHAINS
+========================= */
+function getActiveChain(){
+  if(!state.activeChainId) return null;
+  return CHAINS.find(c=>c.id===state.activeChainId) || null;
+}
+function canUseChain(chain){
+  if(!chain) return false;
+  const mode = state.squad ? "squad" : "solo";
+  return chain.modes.includes(mode);
+}
+function startRandomChain(){
+  const mode = state.squad ? "squad" : "solo";
+  const eligible = CHAINS.filter(c=>c.modes.includes(mode));
+  if(!eligible.length) return null;
+  const chain = pick(eligible);
+  state.activeChainId = chain.id;
+  state.activeChainStep = 0;
+  return chain;
+}
+function failChain(){
+  state.activeChainId = null;
+  state.activeChainStep = 0;
+}
+function advanceChain(){
+  const chain = getActiveChain();
+  if(!chain) return { done:false, err:"No active chain" };
+  const next = state.activeChainStep + 1;
+  if(next >= chain.steps.length){
+    failChain();
+    return { done:true };
+  }
+  state.activeChainStep = next;
+  return { done:false };
+}
+function renderChainUI(chain){
+  if(!state.chains || !chain || !canUseChain(chain)){
+    elChainBlock.classList.add("hidden");
+    elChainBlock.innerHTML = "";
+    return false;
+  }
+  const stepIdx = Math.min(Math.max(state.activeChainStep, 0), chain.steps.length-1);
+  const step = chain.steps[stepIdx];
+  elChainBlock.classList.remove("hidden");
+  elChainBlock.innerHTML = `
+    <div class="missionCard" style="border-color: rgba(255,209,102,.22); background: rgba(255,209,102,.06);">
+      <div class="missionKey">Mission Chain</div>
+      <div class="missionVal">${escapeHtml(chain.name)} — Step ${stepIdx+1}/${chain.steps.length}: ${escapeHtml(step.title)}</div>
+      <div class="missionSmall">Failure resets chain. Success: advance to the next step.</div>
+    </div>
+  `;
+  renderMission({
+    title: `${chain.name}: ${step.title}`,
+    subtitle: `Faction: ${chain.faction} • Chain step ${stepIdx+1}/${chain.steps.length}`,
+    objectives: step.objectives,
+    constraints: step.constraints,
+    bonus: step.bonus
+  });
+  return true;
+}
+
+/* =========================
+   DAILY
+========================= */
+function loadDaily(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY_DAILY);
+    if(!raw) return null;
+    const d = JSON.parse(raw);
+    if(!d || !d.date) return null;
+    if(d.date !== nowLocalISODate()) return null;
+    return d;
+  }catch{ return null; }
+}
+function saveDaily(d){ localStorage.setItem(STORAGE_KEY_DAILY, JSON.stringify(d)); }
+function clearDaily(){ localStorage.removeItem(STORAGE_KEY_DAILY); }
+
+function dailyBadgesHTML(d){
+  const b = [
+    {text:`Faction: ${d.faction}`, tone:d.factionTone || "ok"},
+    {text:`Mode: ${d.squad ? "Squad" : "Solo"}`, tone:d.squad ? "warn" : "ok"},
+    {text:`Difficulty: ${["Easy","Normal","Spicy"][d.difficulty]}`, tone:d.difficulty===2 ? "danger" : (d.difficulty===1 ? "warn" : "ok")},
+    {text:`Chains: ${d.chains ? "ON" : "OFF"}`, tone:d.chains ? "warn" : "ok"},
+    {text:`Meme↔Meta: ${d.memeMeta}%`, tone:d.memeMeta<=33 ? "warn" : "ok"}
   ];
-  elMissionBody.innerHTML = lines.map(x=>{
-    return `
-      <div class="missionLine">
-        <div class="missionKey">${escapeHtml(x.k)}</div>
-        <div class="missionVal">${escapeHtml(m[x.k] ?? "—")}</div>
-        <div class="missionHint">${escapeHtml(x.hint)}</div>
-      </div>
-    `;
-  }).join("");
+  return b.map(x=>`<span class="badge ${x.tone}"><span class="bDot"></span>${escapeHtml(x.text)}</span>`).join("");
 }
 
-let lastRoll = null;
+function renderDaily(d){
+  dailyResetPill.textContent = `Resets: ${fmtDuration(msUntilLocalMidnight())}`;
+  if(!d){
+    dailyCard.classList.remove("dailyCard");
+    dailyHeadline.textContent = "Not generated today";
+    dailyBadges.innerHTML = "";
+    dailyBody.innerHTML = `<div class="mutedNote">Click <b>Generate Daily</b> to lock in today’s run.</div>`;
+    return;
+  }
+  dailyCard.classList.add("dailyCard");
+  dailyHeadline.textContent = `${d.faction} • ${d.squad ? "Squad" : "Solo"} • ${["Easy","Normal","Spicy"][d.difficulty]} • ${d.seed}`;
+  dailyBadges.innerHTML = dailyBadgesHTML(d);
 
-function roll(){
-  const pools = getPools();
+  const loadoutLines = [
+    `<div class="missionKey">Loadout</div>`,
+    `<div class="missionSmall"><b>Primary:</b> ${escapeHtml(d.kit.base.Primary)}</div>`,
+    `<div class="missionSmall"><b>Secondary:</b> ${escapeHtml(d.kit.base.Secondary)}</div>`,
+    `<div class="missionSmall"><b>Tactical:</b> ${escapeHtml(d.kit.base.Tactical)}</div>`,
+    `<div class="missionSmall"><b>Lethal:</b> ${escapeHtml(d.kit.base.Lethal)}</div>`,
+    `<div class="missionSmall"><b>Field:</b> ${escapeHtml(d.kit.base["Field Upgrade"])}</div>`
+  ];
+  if(d.regain){
+    loadoutLines.push(`<div class="divider"></div><div class="missionKey">Extra Gear (Regain)</div>`);
+    loadoutLines.push(`<div class="missionSmall"><b>Vest:</b> ${escapeHtml(d.kit.extra.Vest)}</div>`);
+    loadoutLines.push(`<div class="missionSmall"><b>Backpack:</b> ${escapeHtml(d.kit.extra.Backpack)}</div>`);
+    loadoutLines.push(`<div class="missionSmall"><b>Revive:</b> ${escapeHtml(d.kit.extra.Revive)}</div>`);
+    loadoutLines.push(`<div class="missionSmall"><b>Mask:</b> ${escapeHtml(d.kit.extra.Mask)}</div>`);
+  }
 
-  state.seed = randSeed();
-  elSeed.textContent = `Seed: ${state.seed}`;
+  const missionBlock = [];
+  missionBlock.push(`<div class="divider"></div><div class="missionKey">Mission</div>`);
+  missionBlock.push(`<div class="missionVal">${escapeHtml(d.mission.title)}</div>`);
+  missionBlock.push(`<div class="missionSmall">${escapeHtml(d.mission.subtitle || "")}</div>`);
+  missionBlock.push(`<ul class="objList">${(d.mission.objectives||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul>`);
+  if(d.mission.constraints?.length){
+    missionBlock.push(`<div class="missionSmall"><b>Constraints:</b></div>`);
+    missionBlock.push(`<ul class="objList">${d.mission.constraints.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul>`);
+  }
+  missionBlock.push(`<div class="missionSmall"><b>Bonus:</b> ${escapeHtml(d.mission.bonus || "")}</div>`);
 
-  const kit = generateLoadout(pools);
-  const mission = generateMission();
-
-  lastRoll = { kit, mission, seed: state.seed };
-
-  elLoadoutHeadline.textContent =
-    `${state.regain ? "Regain ON" : "Regain OFF"} • ` +
-    `${state.attachments ? "Attachments ON" : "Attachments OFF"} • ${state.seed}`;
-
-  elMissionHeadline.textContent =
-    `${state.squad ? "Squad" : "Solo"} • ${["Easy","Normal","Spicy"][state.difficulty]} • ${state.seed}`;
-
-  modePill.textContent = `Mode: ${state.squad ? "Squad" : "Solo"}`;
-
-  renderLoadout(kit);
-  renderMission(mission);
+  dailyBody.innerHTML = `<div class="missionCard">${loadoutLines.join("")}${missionBlock.join("")}</div>`;
 }
 
-async function copyText(){
-  const snapshot = lastRoll || { kit: null, mission: null, seed: state.seed || "—" };
-  const kit = snapshot.kit;
-  const mission = snapshot.mission;
+/* =========================
+   COPY EXPORT
+========================= */
+function buildCopyPayload(p, format){
+  const modeName = p.squad ? "SQUAD" : "SOLO";
+  const diffName = ["Easy","Normal","Spicy"][p.difficulty];
+  const mapName = MAPS[p.mapFlavor]?.name || "Any";
+  const primary = p.kit.base.Primary;
+  const secondary = p.kit.base.Secondary;
 
-  const blocks = [];
-  blocks.push(`DMZ MW2 GENERATOR — ${snapshot.seed ?? "—"}`);
-  blocks.push(`Mode: ${state.squad ? "SQUAD (teammates required)" : "SOLO"}`);
-  blocks.push(`Regain: ${state.regain ? "ON (Extra Slots Added)" : "OFF (Base Kit)"}`);
-  blocks.push(`Attachments: ${state.attachments ? "ON" : "OFF"}`);
-  blocks.push(`Mission Difficulty: ${["Easy","Normal","Spicy"][state.difficulty]}`);
-  blocks.push("");
-
-  if(kit){
-    blocks.push("LOADOUT (BASE):");
-    blocks.push(`Primary: ${kit.base.Primary}`);
-    if(state.attachments){
-      const a = kit.attachments?.Primary || [];
-      blocks.push(`Primary Attachments:`);
-      if(a.length) a.forEach(x=>blocks.push(`- ${niceSlotName(x.slot)}: ${x.name}`));
-      else blocks.push(`- None`);
-    }
-    blocks.push(`Secondary: ${kit.base.Secondary}`);
-    if(state.attachments){
-      const a = kit.attachments?.Secondary || [];
-      blocks.push(`Secondary Attachments:`);
-      if(a.length) a.forEach(x=>blocks.push(`- ${niceSlotName(x.slot)}: ${x.name}`));
-      else blocks.push(`- None`);
-    }
-    blocks.push(`Tactical: ${kit.base.Tactical}`);
-    blocks.push(`Lethal: ${kit.base.Lethal}`);
-    blocks.push(`Field Upgrade: ${kit.base["Field Upgrade"]}`);
-
-    if(state.regain){
-      blocks.push("");
-      blocks.push("LOADOUT (EXTRA):");
-      blocks.push(`Vest: ${kit.extra.Vest}`);
-      blocks.push(`Backpack: ${kit.extra.Backpack}`);
-      blocks.push(`Revive: ${kit.extra.Revive}`);
-      blocks.push(`Mask: ${kit.extra.Mask}`);
-    }
+  if(format === "oneline"){
+    return `DMZ ${mapName} | ${p.faction} | ${modeName} ${diffName} | Meme↔Meta ${p.memeMeta}% | ${primary} + ${secondary} | ${p.mission.title}`;
   }
 
-  if(mission){
-    blocks.push("");
-    blocks.push("MISSION:");
-    Object.keys(mission).forEach(k=>blocks.push(`${k}: ${mission[k]}`));
+  if(format === "discord"){
+    const lines = [];
+    lines.push(`**DMZ MW2 RUN** — \`${p.seed}\``);
+    lines.push(`**Faction:** ${p.faction}`);
+    lines.push(`**Mode:** ${modeName}  |  **Difficulty:** ${diffName}  |  **Map:** ${mapName}`);
+    lines.push(`**Meme↔Meta:** ${p.memeMeta}%  |  **Chains:** ${p.chains ? "ON" : "OFF"}`);
+    lines.push("");
+    lines.push(`**LOADOUT**`);
+    lines.push(`• Primary: **${primary}**`);
+    if(p.attachments && p.kit.attachments?.Primary?.length){
+      lines.push(`  - Attachments:`);
+      p.kit.attachments.Primary.forEach(a=>lines.push(`    • ${niceSlotName(a.slot)}: ${a.name}`));
+    }
+    lines.push(`• Secondary: **${secondary}**`);
+    if(p.attachments && p.kit.attachments?.Secondary?.length){
+      lines.push(`  - Attachments:`);
+      p.kit.attachments.Secondary.forEach(a=>lines.push(`    • ${niceSlotName(a.slot)}: ${a.name}`));
+    }
+    lines.push(`• Tactical: ${p.kit.base.Tactical}`);
+    lines.push(`• Lethal: ${p.kit.base.Lethal}`);
+    lines.push(`• Field: ${p.kit.base["Field Upgrade"]}`);
+    if(p.regain){
+      lines.push(`• Extra: ${p.kit.extra.Vest}, ${p.kit.extra.Backpack}, ${p.kit.extra.Revive}, ${p.kit.extra.Mask}`);
+    }
+    lines.push("");
+    lines.push(`**MISSION — ${p.mission.title}**`);
+    if(p.mission.subtitle) lines.push(`_${p.mission.subtitle}_`);
+    (p.mission.objectives||[]).forEach((o,i)=>lines.push(`• ${i+1}. ${o}`));
+    if(p.mission.constraints?.length){
+      lines.push("");
+      lines.push(`**Constraints**`);
+      p.mission.constraints.forEach(c=>lines.push(`• ${c}`));
+    }
+    lines.push("");
+    lines.push(`**Bonus:** ${p.mission.bonus}`);
+    return lines.join("\n");
   }
 
-  const text = blocks.join("\n");
+  if(format === "checklist"){
+    const lines = [];
+    lines.push(`DMZ MW2 RUN — ${p.seed}`);
+    lines.push(`${p.faction} | ${modeName} | ${diffName} | ${mapName}`);
+    lines.push("");
+    lines.push(`LOADOUT:`);
+    lines.push(`- Primary: ${primary}`);
+    lines.push(`- Secondary: ${secondary}`);
+    lines.push(`- Tactical: ${p.kit.base.Tactical}`);
+    lines.push(`- Lethal: ${p.kit.base.Lethal}`);
+    lines.push(`- Field: ${p.kit.base["Field Upgrade"]}`);
+    if(p.regain) lines.push(`- Extra: ${p.kit.extra.Vest}, ${p.kit.extra.Backpack}, ${p.kit.extra.Revive}, ${p.kit.extra.Mask}`);
+    lines.push("");
+    lines.push(`MISSION: ${p.mission.title}`);
+    (p.mission.objectives||[]).forEach(o=>lines.push(`- [ ] ${o}`));
+    if(p.mission.constraints?.length){
+      lines.push("");
+      lines.push(`Constraints:`);
+      p.mission.constraints.forEach(c=>lines.push(`- [ ] ${c}`));
+    }
+    lines.push("");
+    lines.push(`Bonus: ${p.mission.bonus}`);
+    return lines.join("\n");
+  }
 
+  // plain default
+  const lines = [];
+  lines.push(`DMZ MW2 — ${p.seed}`);
+  lines.push(`Faction: ${p.faction}`);
+  lines.push(`Mode: ${modeName} | Difficulty: ${diffName} | Map: ${mapName}`);
+  lines.push(`Meme↔Meta: ${p.memeMeta}% | Chains: ${p.chains ? "ON" : "OFF"} | Regain: ${p.regain ? "ON" : "OFF"} | Attachments: ${p.attachments ? "ON" : "OFF"}`);
+  lines.push("");
+  lines.push(`LOADOUT:`);
+  lines.push(`Primary: ${primary}`);
+  lines.push(`Secondary: ${secondary}`);
+  lines.push(`Tactical: ${p.kit.base.Tactical}`);
+  lines.push(`Lethal: ${p.kit.base.Lethal}`);
+  lines.push(`Field: ${p.kit.base["Field Upgrade"]}`);
+  if(p.regain) lines.push(`Extra: ${p.kit.extra.Vest}, ${p.kit.extra.Backpack}, ${p.kit.extra.Revive}, ${p.kit.extra.Mask}`);
+  if(p.attachments){
+    const a1 = p.kit.attachments?.Primary || [];
+    const a2 = p.kit.attachments?.Secondary || [];
+    lines.push("");
+    lines.push(`ATTACHMENTS:`);
+    lines.push(`Primary:`);
+    lines.push(a1.length ? a1.map(x=>`- ${niceSlotName(x.slot)}: ${x.name}`).join("\\n") : "- None");
+    lines.push(`Secondary:`);
+    lines.push(a2.length ? a2.map(x=>`- ${niceSlotName(x.slot)}: ${x.name}`).join("\\n") : "- None");
+  }
+  lines.push("");
+  lines.push(`MISSION: ${p.mission.title}`);
+  if(p.mission.subtitle) lines.push(p.mission.subtitle);
+  (p.mission.objectives||[]).forEach((o,i)=>lines.push(`${i+1}) ${o}`));
+  if(p.mission.constraints?.length){
+    lines.push("");
+    lines.push(`Constraints:`);
+    p.mission.constraints.forEach(c=>lines.push(`- ${c}`));
+  }
+  lines.push("");
+  lines.push(`Bonus: ${p.mission.bonus}`);
+  return lines.join("\\n");
+}
+
+async function copyText(payload){
+  const fmt = exportFormatEl.value || "plain";
+  const text = buildCopyPayload(payload, fmt);
   try{
     await navigator.clipboard.writeText(text);
     showToast("Copied");
@@ -1109,117 +1691,187 @@ async function copyText(){
   }
 }
 
-function setSwitch(el, on){
-  el.dataset.on = on ? "true" : "false";
-  el.setAttribute("aria-checked", on ? "true" : "false");
-}
+/* =========================
+   MAIN ROLL
+========================= */
+let lastRoll = null;
 
-/* ---- Pools modal ---- */
-const POOL_FIELDS = [
-  ["PRIMARY_WEAPONS","Primary Weapons (full pool)","Everything you want eligible for PRIMARY. One per line."],
-  ["SECONDARY_WEAPONS","Secondary Weapons (limited)","Only items eligible for SECONDARY (handguns/launchers/melee). One per line."],
-  ["TACTICAL","Tactical","One per line."],
-  ["LETHAL","Lethal","One per line."],
-  ["FIELD_UPGRADE","Field Upgrade","One per line."],
-  ["VEST","Vest (Regain extra slot)","Only appears when Regain is ON."],
-  ["BACKPACK","Backpack (Regain extra slot)","Only appears when Regain is ON."],
-  ["REVIVE","Revive (Regain extra slot)","Only appears when Regain is ON."],
-  ["MASK","Mask (Regain extra slot)","Only appears when Regain is ON."]
-];
-
-function openModal(){
-  renderPoolsEditor();
-  modalOverlay.classList.add("show");
-  modalOverlay.setAttribute("aria-hidden","false");
-}
-function closeModal(){
-  modalOverlay.classList.remove("show");
-  modalOverlay.setAttribute("aria-hidden","true");
-}
-function renderPoolsEditor(){
+function roll(){
   const pools = getPools();
-  modalGrid.innerHTML = "";
-  for(const [key,title,hint] of POOL_FIELDS){
-    const box = document.createElement("div");
-    box.className = "poolBox";
-    box.innerHTML = `
-      <h5>${escapeHtml(title)}</h5>
-      <div class="hint">${escapeHtml(hint)}</div>
-      <textarea id="ta_${key}" spellcheck="false"></textarea>
-    `;
-    modalGrid.appendChild(box);
-    box.querySelector("textarea").value = (pools[key] ?? []).join("\n");
+  state.seed = randSeed();
+  elSeed.textContent = `Seed: ${state.seed}`;
+
+  const chain = getActiveChain();
+  if(state.chains && chain && canUseChain(chain)){
+    state.factionObj = FACTIONS.find(x=>x.name===chain.faction) || chooseFaction();
+    elFactionBriefing.innerHTML = `<b>${escapeHtml(chain.faction)}:</b> ${escapeHtml(chain.briefing)}`;
+  }else{
+    state.factionObj = chooseFaction();
+    elFactionBriefing.innerHTML = `<b>${escapeHtml(state.factionObj.name)}:</b> ${escapeHtml(pick(state.factionObj.intros))}`;
   }
-}
-function saveFromEditor(){
-  const next = {};
-  for(const [key] of POOL_FIELDS){
-    const ta = document.getElementById("ta_" + key);
-    next[key] = normalizeList(ta ? ta.value : "");
+
+  renderBadges(state.factionObj);
+
+  const kit = generateLoadout(pools);
+  renderLoadout(kit);
+
+  const diffName = ["Easy","Normal","Spicy"][state.difficulty];
+  const modeName = state.squad ? "Squad" : "Solo";
+  const chainStatus = state.chains ? "Chains ON" : "Chains OFF";
+  const mapName = MAPS[state.mapFlavor]?.name || "Any";
+
+  elLoadoutHeadline.textContent = `${state.regain ? "Regain ON" : "Regain OFF"} • ${state.attachments ? "Attachments ON" : "Attachments OFF"} • Meme↔Meta ${state.memeMeta}% • ${state.seed}`;
+  elMissionHeadline.textContent = `${modeName} • ${diffName} • ${chainStatus} • ${mapName} • ${state.seed}`;
+  modePill.textContent = `Mode: ${modeName}`;
+
+  let mission = null;
+  if(state.chains && chain && canUseChain(chain)){
+    renderChainUI(chain);
+    const step = chain.steps[Math.min(Math.max(state.activeChainStep,0), chain.steps.length-1)];
+    mission = {
+      title: `${chain.name}: ${step.title}`,
+      subtitle: `Faction: ${chain.faction} • Chain step ${state.activeChainStep+1}/${chain.steps.length}`,
+      objectives: step.objectives,
+      constraints: step.constraints,
+      bonus: step.bonus
+    };
+  }else{
+    elChainBlock.classList.add("hidden");
+    elChainBlock.innerHTML = "";
+    mission = buildMission();
+    renderMission(mission);
   }
-  savePools(next);
-  showToast("Pools saved");
-}
-async function copyPoolsJson(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY) || JSON.stringify(getPools(), null, 2);
-    await navigator.clipboard.writeText(raw);
-    showToast("Copied JSON");
-  }catch{
-    showToast("Copy failed");
-  }
-}
-function resetPools(){
-  localStorage.removeItem(STORAGE_KEY);
-  renderPoolsEditor();
-  showToast("Defaults restored");
+
+  lastRoll = {
+    seed: state.seed,
+    faction: state.factionObj.name,
+    factionTone: state.factionObj.tone,
+    regain: state.regain,
+    attachments: state.attachments,
+    squad: state.squad,
+    chains: state.chains,
+    difficulty: state.difficulty,
+    mapFlavor: state.mapFlavor,
+    memeMeta: state.memeMeta,
+    kit,
+    mission
+  };
+
+  saveAppState();
 }
 
-/* ---- Wiring ---- */
+/* =========================
+   DAILY ACTIONS
+========================= */
+function generateDailyFromCurrent(){
+  if(!lastRoll) roll();
+  const d = { date: nowLocalISODate(), ...lastRoll };
+  saveDaily(d);
+  renderDaily(d);
+  showToast("Daily generated");
+}
+
+/* =========================
+   WIRES
+========================= */
+function bindToggle(id, key){
+  const el = document.getElementById(id);
+  setSwitch(el, state[key]);
+  el.addEventListener("click", ()=>{
+    state[key] = !state[key];
+    setSwitch(el, state[key]);
+    if(key==="chains" && !state.chains) failChain();
+    saveAppState();
+    roll();
+  });
+}
+
 document.getElementById("rollBtn").addEventListener("click", roll);
-document.getElementById("copyBtn").addEventListener("click", copyText);
+document.getElementById("copyBtn").addEventListener("click", ()=>{ if(!lastRoll) roll(); copyText(lastRoll); });
 
 document.getElementById("editPoolsBtn").addEventListener("click", openModal);
 document.getElementById("closeBtn").addEventListener("click", closeModal);
-document.getElementById("savePoolsBtn").addEventListener("click", ()=>{ saveFromEditor(); roll(); });
+document.getElementById("savePoolsBtn").addEventListener("click", ()=>{ saveFromEditor(); closeModal(); roll(); });
 document.getElementById("resetBtn").addEventListener("click", ()=>{ resetPools(); roll(); });
 document.getElementById("copyJsonBtn").addEventListener("click", copyPoolsJson);
 
 modalOverlay.addEventListener("click", (e)=>{ if(e.target === modalOverlay) closeModal(); });
 window.addEventListener("keydown", (e)=>{ if(e.key === "Escape" && modalOverlay.classList.contains("show")) closeModal(); });
 
-diffSlider.addEventListener("input", ()=>{
-  state.difficulty = parseInt(diffSlider.value, 10) || 0;
-  updateDifficultyUI();
+diffSlider.addEventListener("input", ()=>{ state.difficulty = parseInt(diffSlider.value,10)||0; updateDifficultyUI(); saveAppState(); roll(); });
+mmSlider.addEventListener("input", ()=>{ state.memeMeta = parseInt(mmSlider.value,10)||0; updateMemeMetaUI(); saveAppState(); roll(); });
+
+exportFormatEl.addEventListener("change", saveAppState);
+mapFlavorEl.addEventListener("change", ()=>{ state.mapFlavor = mapFlavorEl.value || "any"; saveAppState(); roll(); });
+
+bindToggle("regainSwitch","regain");
+bindToggle("attachSwitch","attachments");
+bindToggle("squadSwitch","squad");
+bindToggle("chainsSwitch","chains");
+
+document.getElementById("startChainBtn").addEventListener("click", ()=>{
+  if(!state.chains) return showToast("Enable Mission Chains first");
+  if(state.activeChainId) return showToast("Chain already active");
+  const c = startRandomChain();
+  if(!c) return showToast("No chains for this mode");
+  saveAppState();
+  showToast(`Chain started: ${c.name}`);
+  roll();
+});
+document.getElementById("advanceChainBtn").addEventListener("click", ()=>{
+  if(!state.chains) return showToast("Enable Mission Chains first");
+  const res = advanceChain();
+  saveAppState();
+  showToast(res?.done ? "Chain completed!" : "Advanced chain step");
+  roll();
+});
+document.getElementById("failChainBtn").addEventListener("click", ()=>{
+  if(!state.chains) return showToast("Enable Mission Chains first");
+  if(!state.activeChainId) return showToast("No active chain");
+  failChain();
+  saveAppState();
+  showToast("Chain reset");
   roll();
 });
 
+document.getElementById("dailyGenerateBtn").addEventListener("click", ()=>{
+  const existing = loadDaily();
+  if(existing) return showToast("Daily already generated today");
+  generateDailyFromCurrent();
+});
+document.getElementById("dailyCopyBtn").addEventListener("click", ()=>{
+  const d = loadDaily();
+  if(!d) return showToast("No daily run today");
+  copyText(d);
+});
+document.getElementById("dailyClearBtn").addEventListener("click", ()=>{
+  clearDaily();
+  renderDaily(null);
+  showToast("Daily cleared");
+});
+
+/* =========================
+   INIT
+========================= */
 (function init(){
+  loadAppState();
   updateDifficultyUI();
+  updateMemeMetaUI();
 
-  const regainEl = document.getElementById("regainSwitch");
-  setSwitch(regainEl, state.regain);
-  regainEl.addEventListener("click", ()=>{
-    state.regain = !state.regain;
-    setSwitch(regainEl, state.regain);
-    roll();
-  });
+  mapFlavorEl.value = state.mapFlavor;
+  diffSlider.value = String(state.difficulty);
+  mmSlider.value = String(state.memeMeta);
 
-  const attachEl = document.getElementById("attachSwitch");
-  setSwitch(attachEl, state.attachments);
-  attachEl.addEventListener("click", ()=>{
-    state.attachments = !state.attachments;
-    setSwitch(attachEl, state.attachments);
-    roll();
-  });
+  setSwitch(document.getElementById("regainSwitch"), state.regain);
+  setSwitch(document.getElementById("attachSwitch"), state.attachments);
+  setSwitch(document.getElementById("squadSwitch"), state.squad);
+  setSwitch(document.getElementById("chainsSwitch"), state.chains);
 
-  const squadEl = document.getElementById("squadSwitch");
-  setSwitch(squadEl, state.squad);
-  squadEl.addEventListener("click", ()=>{
-    state.squad = !state.squad;
-    setSwitch(squadEl, state.squad);
-    roll();
-  });
+  if(!state.chains) failChain();
+
+  renderDaily(loadDaily());
+  dailyResetPill.textContent = `Resets: ${fmtDuration(msUntilLocalMidnight())}`;
+  setInterval(()=>{ dailyResetPill.textContent = `Resets: ${fmtDuration(msUntilLocalMidnight())}`; }, 30_000);
 
   roll();
 })();
