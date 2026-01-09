@@ -812,224 +812,299 @@ const MAPS = {
 /* =========================
    DMZ-AUTHENTIC MISSION TEMPLATES
 ========================= */
-const CONTRACTS = ["HVT","Secure Intel","Hostage Rescue","Raid Weapon Stash"];
-const SYSTEMS = {
-  deadDrops: ["a dead drop","a dumpster dead drop","a police station dead drop"],
-  stronghold: "a Stronghold",
-  uav: "a UAV Tower",
-  buy: "a Buy Station",
-  locked: "a locked space"
+/* =========================
+   DMZ-AUTHENTIC MISSIONS (CHECKLIST STYLE)
+   - Missions are NAME + bullet objectives (like real DMZ)
+   - Difficulty maps to Tier bands:
+     Easy   -> Tier 1–2
+     Normal -> Tier 3–4
+     Spicy  -> Tier 5 (brutal)
+========================= */
+const CONTRACTS = ["HVT","Secure Intel","Hostage Rescue","Raid Weapon Stash","Destroy Supplies","Eliminate HVT","Deliver Cargo","Signal Intelligence"];
+const CONTRACT_PHRASE = ["contract phone","contract phone via Tac-Map"];
+
+function pickDifferent(arr, notVal){
+  const filtered = arr.filter(x=>x!==notVal);
+  return filtered.length ? pick(filtered) : pick(arr);
+}
+
+function mapObj(){
+  return MAPS[state.mapFlavor] || MAPS.any;
+}
+
+function randPOI(map){
+  return pick(map.pois);
+}
+function randDeadDrop(){
+  return pick(["a dumpster dead drop","a police station dead drop","a riverside dead drop","a market dead drop","a university dead drop"]);
+}
+
+function fillVars(s, map){
+  // Simple placeholder replacement
+  let out = s;
+  const poi1 = randPOI(map);
+  const poi2 = randPOI(map);
+  const c1 = pick(CONTRACTS);
+  const c2 = pickDifferent(CONTRACTS, c1);
+  const dd = randDeadDrop();
+  out = out.replaceAll("{MAP}", map.name);
+  out = out.replaceAll("{POI}", poi1);
+  out = out.replaceAll("{POI2}", poi2);
+  out = out.replaceAll("{CONTRACT}", c1);
+  out = out.replaceAll("{CONTRACT2}", c2);
+  out = out.replaceAll("{DEADDROP}", dd);
+  out = out.replaceAll("{CONTRACTPHONE}", pick(CONTRACT_PHRASE));
+  return out;
+}
+
+// Mission pools by Tier band + mode.
+// Each mission: { name, objectives[], rewardsLine?, tags? }
+const MISSIONS = {
+  // Tier 1–2 (Easy)
+  easy: {
+    solo: [
+      { name:"Make Contact", objectives:[
+        "Use your Tac-Map and ping a {CONTRACTPHONE}.",
+        "Find a contract phone and start any contract.",
+      ], rewardsLine:"+5,000 XP" },
+      { name:"Information Seeker", objectives:[
+        "Ping a UAV Tower.",
+        "Activate 1 UAV Tower.",
+      ], rewardsLine:"+5,000 XP" },
+      { name:"Exfiltration", objectives:[
+        "Call in an exfil chopper at an exfil site marked with green smoke.",
+        "Exfil using the helicopter.",
+      ], rewardsLine:"+5,000 XP" },
+      { name:"Committed Shopper", objectives:[
+        "Sell a valuable item at a Buy Station.",
+        "Exfil successfully.",
+      ], rewardsLine:"+5,000 XP" },
+      { name:"Convenience", objectives:[
+        "Ping a vehicle on the Tac-Map.",
+        "Fully refuel and repair a vehicle at a gas station.",
+      ], rewardsLine:"+5,000 XP" },
+      { name:"Close Quarters", objectives:[
+        "Acquire a stronghold keycard.",
+        "Clear a stronghold of enemies.",
+      ], rewardsLine:"+7,500 XP" },
+      { name:"Down and Out", objectives:[
+        "Complete a Raid Weapon Stash contract without being downed.",
+      ], rewardsLine:"+7,500 XP" },
+      { name:"Air Support", objectives:[
+        "Acquire a killstreak from a buy station, supply drop, or elsewhere.",
+        "Exfil successfully.",
+      ], rewardsLine:"+5,000 XP" },
+      { name:"Demolitions", objectives:[
+        "Complete a Destroy Supplies contract to locate nearby safes.",
+        "Find and open a safe.",
+      ], rewardsLine:"+7,500 XP" },
+      { name:"Upgraded Arsenal", objectives:[
+        "Attach a suppressor to a weapon at a workbench.",
+        "Kill 6 enemies with a suppressed weapon.",
+      ], rewardsLine:"+5,000 XP" },
+      // Fun “meme” tier-2-ish
+      { name:"Bruiser", objectives:[
+        "Kill 20 enemies with your fists in one deployment.",
+      ], rewardsLine:"+15,000 XP" },
+      { name:"Frogicide", objectives:[
+        "Destroy 3 Tactical Amphibious Vehicles in under 5 seconds.",
+      ], rewardsLine:"+15,000 XP" },
+    ],
+    squad: [
+      { name:"Team Player", objectives:[
+        "Hold the request to assimilate with a nearby squad.",
+        "Successfully assimilate with another squad.",
+      ], rewardsLine:"+7,500 XP" },
+      { name:"Stress Test", objectives:[
+        "Extract in a helo carrying 7 or more operators.",
+      ], rewardsLine:"+15,000 XP" },
+      { name:"Anti-Air", objectives:[
+        "Capture 2 SAM Sites in one deployment.",
+        "Open a supply drop.",
+      ], rewardsLine:"+7,500 XP" },
+      { name:"Hostage Rescue", objectives:[
+        "Complete a Rescue Hostage contract.",
+        "Exfil with the hostage evac helo.",
+      ], rewardsLine:"+7,500 XP" },
+      { name:"Hostiles Located", objectives:[
+        "Ping 5 enemies.",
+        "Kill 5 enemies.",
+      ], rewardsLine:"+5,000 XP" },
+    ]
+  },
+
+  // Tier 3–4 (Normal)
+  normal: {
+    solo: [
+      { name:"Turn the Tide", objectives:[
+        "Complete 2 Secure Intel contracts.",
+        "Complete a Destroy Supplies contract in the same deployment.",
+        "Drill 3 safes in the same deployment.",
+      ], rewardsLine:"+15,000 XP" },
+      { name:"Contract Killer", objectives:[
+        "Complete 4 types of contracts in one deployment.",
+        "Take final exfil in the same deployment.",
+      ], rewardsLine:"+15,000 XP" },
+      { name:"Bedrock", objectives:[
+        "Enter the Koschei Complex.",
+        "Investigate the Chemical Plant.",
+        "Extract from the Koschei Complex.",
+      ], rewardsLine:"+10,000 XP" },
+      { name:"Unarmed and Dangerous", objectives:[
+        "Infil solo without any weapons.",
+        "Exfil in the same deployment without picking up any weapons.",
+      ], rewardsLine:"+10,000 XP" },
+      { name:"Title Deed", objectives:[
+        "Take a hard drive from a dead drop.",
+        "Take a second hard drive from another dead drop.",
+        "Upload both hard drives at the same time in {POI}.",
+      ], rewardsLine:"+30,000 XP" },
+      { name:"Eyes and Ears", objectives:[
+        "Take a discrete radio transmitter from {DEADDROP}.",
+        "Plant the radio transmitter under a central security desk (same deployment).",
+        "Extract in the same deployment.",
+      ], rewardsLine:"+15,000 XP" },
+      { name:"Flight Plans", objectives:[
+        "Take 3 hacked thumb drives from a dead drop.",
+        "In one deployment, plant thumb drives in 3 computers at: {POI}, {POI2}, and another major POI.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Rifle Some Feathers", objectives:[
+        "Buy a SP-X 80 from a Buy Station.",
+        "Kill 15 Operators or Commanders with a SP-X 80.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Firearm Regulation", objectives:[
+        "Deliver 25 weapons to {MAP} dead drops in a single deployment.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Pathfinder", objectives:[
+        "Loot a GPS Tracker from {DEADDROP}.",
+        "Travel to every POI in {MAP} while carrying the GPS Tracker in one deployment.",
+        "Extract the GPS Tracker.",
+      ], rewardsLine:"+10,000 XP" },
+      { name:"Deadlines", objectives:[
+        "Complete 4 contracts in under 6:00 minutes.",
+      ], rewardsLine:"+15,000 XP" },
+      { name:"Icebreaker", objectives:[
+        "Pick up the letter of introduction and tracker from a dead drop.",
+        "Deliver the letter of introduction to a second dead drop (same deployment).",
+        "Deliver the tracking device to the same dead drop (same deployment).",
+      ], rewardsLine:"+15,000 XP" },
+    ],
+    squad: [
+      { name:"Operators In Need", objectives:[
+        "Help a squadmate complete 3 missions.",
+      ], rewardsLine:"+10,000 XP" },
+      { name:"Substantial Findings", objectives:[
+        "Take 2 tracking devices from dead drops in {MAP}.",
+        "Plant a tracker at {POI}.",
+        "Plant a tracker at {POI2}.",
+      ], rewardsLine:"+10,000 XP" },
+      { name:"Quid Pro Quo", objectives:[
+        "Call in a vehicle drop near {POI}.",
+        "Drive the vehicle to {POI2} in the same deployment.",
+        "Drive the vehicle to a third POI in the same deployment.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Air Supremacy", objectives:[
+        "Control 3 SAM sites simultaneously.",
+      ], rewardsLine:"+15,000 XP" },
+    ]
+  },
+
+  // Tier 5 (Spicy) – brutal
+  spicy: {
+    solo: [
+      { name:"Final Countdown", objectives:[
+        "Solo Infil.",
+        "Extract with final exfil with 3 weapons dropped by enemy operators in the same deployment.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Lone Hunter", objectives:[
+        "Infil without any teammates and without any weapons.",
+        "Kill 1 operator in the same deployment.",
+        "Exfil in the same deployment without having picked up any weapons.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Untouchable", objectives:[
+        "Extract a Weapons Case without having taken health damage in that deployment.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Contractual Obligations", objectives:[
+        "Complete 8 unique contracts in a single deployment.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"The Client is King", objectives:[
+        "Complete 8 contracts in 8 unique POIs in one deployment.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Crack the Code", objectives:[
+        "Drill a safe using a special drill found in a keypad-locked room.",
+        "Extract the note found inside in the same deployment.",
+      ], rewardsLine:"+40,000 XP" },
+      { name:"Cut the Head", objectives:[
+        "Trade for an Encryption Key at a Buy Station.",
+        "Activate 4 laptops in a market in under 2 minutes while carrying the Encryption Key.",
+        "Extract with the Encryption Key.",
+      ], rewardsLine:"+40,000 XP" },
+      { name:"Fearless", objectives:[
+        "Clear a major fortress while carrying a weapon case.",
+        "Activate a UAV tower while carrying a weapon case.",
+        "Extract with a weapon case in the same deployment.",
+      ], rewardsLine:"+30,000 XP" },
+      { name:"Profit and Pain", objectives:[
+        "Infil without any teammates without any weapons.",
+        "Extract 3 weapons with at least 3 attachments each in the same deployment.",
+      ], rewardsLine:"+15,000 XP" },
+      { name:"Spice of Life", objectives:[
+        "Kill 10 enemies with a single ammo clip.",
+        "Kill enemies using 20 different weapons in the same deployment.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Delivery Problem", objectives:[
+        "Take 7 tracking devices from a dead drop.",
+        "Plant a tracking device under each of 7 cargo trucks in a parking garage.",
+        "Extract in the same deployment.",
+      ], rewardsLine:"+20,000 XP" },
+    ],
+    squad: [
+      { name:"Hunter", objectives:[
+        "Complete 3 Hunt contracts in one deployment.",
+        "Exfil successfully.",
+      ], rewardsLine:"+15,000 XP" },
+      { name:"Contract Killer", objectives:[
+        "Complete 4 types of contracts in one deployment.",
+        "Take final exfil in the same deployment.",
+      ], rewardsLine:"+15,000 XP" },
+      { name:"Last Line of Defense", objectives:[
+        "Kill 150 enemies in {MAP} in the same deployment.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Breaking the Bunker", objectives:[
+        "Take a weapon from a dead drop.",
+        "Kill the Sniper with the weapon.",
+        "Kill the Rhino with the weapon.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Firearm Regulation", objectives:[
+        "Deliver 25 weapons to {MAP} dead drops in a single deployment.",
+      ], rewardsLine:"+20,000 XP" },
+      { name:"Contractual Obligations", objectives:[
+        "Complete 8 unique contracts in a single deployment.",
+      ], rewardsLine:"+20,000 XP" },
+    ]
+  }
 };
 
-function randSeed(){ return Math.random().toString(36).slice(2, 8).toUpperCase(); }
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-function difficultyKey(){ return state.difficulty === 0 ? "easy" : (state.difficulty === 1 ? "normal" : "spicy"); }
-
-function chooseFaction(){
-  const diff = difficultyKey();
-  const pool = [];
-  for(const f of FACTIONS){
-    let w = 1;
-    if(f.name === "Crown") w = (diff === "spicy" ? 3 : (diff === "normal" ? 2 : 1));
-    if(f.name === "Black Mous") w = (diff === "normal" ? 2 : 1);
-    for(let i=0;i<w;i++) pool.push(f);
-  }
-  return pick(pool);
-}
-
-function missionTemplate_ContractRun(faction, map, mode){
-  const c1 = pick(CONTRACTS);
-  const c2 = pick(CONTRACTS.filter(x=>x!==c1));
-  const poi = pick(map.pois);
-  const obj = [];
-
-  if(difficultyKey() === "easy"){
-    obj.push(`${faction.verbs.secure} a ${c1} contract and complete it.`);
-    obj.push(`${faction.verbs.exfil} successfully.`);
-  }else if(difficultyKey() === "normal"){
-    obj.push(`${faction.verbs.secure} a ${c1} contract and complete it (same deployment).`);
-    obj.push(`${faction.verbs.secure} a second contract (${c2}) and complete it (same deployment).`);
-    obj.push(`${faction.verbs.exfil} successfully.`);
-  }else{
-    obj.push(`${faction.verbs.secure} a ${c1} contract at ${poi} and complete it (same deployment).`);
-    obj.push(`${faction.verbs.secure} a second contract (${c2}) and complete it (same deployment).`);
-    obj.push(`${faction.verbs.secure} ${SYSTEMS.stronghold} and clear it (same deployment).`);
-    obj.push(`${faction.verbs.exfil} successfully.`);
-  }
-
-  const constraints = [];
-  if(mode === "squad") constraints.push("All squad members must exfil on the same helicopter.");
-  constraints.push("Avoid unnecessary PvP—fight only when required.");
-  if(difficultyKey() !== "easy") constraints.push(`No ${SYSTEMS.uav}.`);
-
-  const bonus = (difficultyKey()==="spicy") ? "Final exfil only (if safe)." : "Exfil at the first available helicopter.";
-
+function pickMissionFromPool(pool, map){
+  const m = pick(pool);
+  // Clone and fill placeholders
   return {
-    title: (mode==="squad" ? "Coordinated Contract Sweep" : "Contract Sweep"),
-    subtitle: `Faction: ${faction.name} • Focus: contracts • Map: ${map.name}`,
-    objectives: obj,
-    constraints,
-    bonus
-  };
-}
-
-function missionTemplate_DeadDropLogistics(faction, map, mode){
-  const dd = pick(SYSTEMS.deadDrops);
-  const poi = pick(map.pois);
-  const obj = [];
-  if(difficultyKey()==="easy"){
-    obj.push(`${faction.verbs.acquire} a valuable item.`);
-    obj.push(`${faction.verbs.deliver} it into ${dd}.`);
-    obj.push(`${faction.verbs.exfil} successfully.`);
-  }else if(difficultyKey()==="normal"){
-    obj.push(`${faction.verbs.acquire} an item and ${faction.verbs.deliver} it into ${dd} (same deployment).`);
-    obj.push(`${faction.verbs.secure} a contract phone and complete any contract (same deployment).`);
-    obj.push(`${faction.verbs.exfil} successfully.`);
-  }else{
-    obj.push(`${faction.verbs.acquire} two valuables and ${faction.verbs.deliver} both into ${dd} (same deployment).`);
-    obj.push(`${faction.verbs.secure} ${SYSTEMS.locked} at ${poi} and loot it (same deployment).`);
-    obj.push(`${faction.verbs.exfil} successfully with $40,000+ cash/value.`);
-  }
-
-  const constraints = [];
-  constraints.push(`No ${SYSTEMS.buy}.`);
-  if(mode==="squad") constraints.push("One teammate carries valuables while another provides overwatch.");
-  if(difficultyKey()==="spicy") constraints.push("No vehicles.");
-
-  const bonus = "Extract without any teammate going down (or reset).";
-
-  return {
-    title: "Black Market Logistics",
-    subtitle: `Faction: ${faction.name} • Focus: dead drops • Map: ${map.name}`,
-    objectives: obj,
-    constraints,
-    bonus
-  };
-}
-
-function missionTemplate_IntelOps(faction, map, mode){
-  const poi = pick(map.pois);
-  const obj = [];
-  if(difficultyKey()==="easy"){
-    obj.push(`${faction.verbs.acquire} an intel item (notes/document).`);
-    obj.push(`${faction.verbs.exfil} with the intel.`);
-  }else if(difficultyKey()==="normal"){
-    obj.push(`${faction.verbs.secure} a Secure Intel contract and complete the upload (same deployment).`);
-    obj.push(`${faction.verbs.acquire} any intel item and ${faction.verbs.exfil} with it (same deployment).`);
-  }else{
-    obj.push(`${faction.verbs.secure} a Secure Intel contract at ${poi} and complete the upload (same deployment).`);
-    obj.push(`${faction.verbs.secure} ${SYSTEMS.stronghold} and clear it (same deployment).`);
-    obj.push(`${faction.verbs.exfil} successfully on final exfil (if safe).`);
-  }
-
-  const constraints = [];
-  constraints.push("Avoid PvP unless fired upon.");
-  if(mode==="squad") constraints.push("Stay within 50m of a teammate during the upload.");
-  if(difficultyKey()!=="easy") constraints.push(`No ${SYSTEMS.uav}.`);
-
-  const bonus = "No field upgrades used during the mission.";
-
-  return {
-    title: "Verified Intel",
-    subtitle: `Faction: ${faction.name} • Focus: intel • Map: ${map.name}`,
-    objectives: obj,
-    constraints,
-    bonus
-  };
-}
-
-function missionTemplate_StrongholdPressure(faction, map, mode){
-  const poi = pick(map.pois);
-  const obj = [];
-  if(difficultyKey()==="easy"){
-    obj.push(`${faction.verbs.clear} ${SYSTEMS.stronghold}.`);
-    obj.push(`${faction.verbs.exfil} successfully.`);
-  }else if(difficultyKey()==="normal"){
-    obj.push(`${faction.verbs.clear} ${SYSTEMS.stronghold} and loot it (same deployment).`);
-    obj.push(`${faction.verbs.secure} any contract and complete it (same deployment).`);
-    obj.push(`${faction.verbs.exfil} successfully.`);
-  }else{
-    obj.push(`${faction.verbs.clear} two Strongholds (same deployment).`);
-    obj.push(`${faction.verbs.secure} a ${pick(CONTRACTS)} contract at ${poi} and complete it (same deployment).`);
-    obj.push(`${faction.verbs.exfil} on final exfil (if safe).`);
-  }
-
-  const constraints = [];
-  constraints.push(`No ${SYSTEMS.buy}.`);
-  if(mode==="squad") constraints.push("Each teammate must enter the Stronghold at least once during the clear.");
-  if(difficultyKey()==="spicy") constraints.push("One-weapon rule: only use your Primary weapon.");
-
-  const bonus = "Extract with full plates.";
-
-  return {
-    title: "Breach & Clear",
-    subtitle: `Faction: ${faction.name} • Focus: strongholds • Map: ${map.name}`,
-    objectives: obj,
-    constraints,
-    bonus
-  };
-}
-
-function missionTemplate_HighValueExtraction(faction, map, mode){
-  const obj = [];
-  if(difficultyKey()==="easy"){
-    obj.push(`${faction.verbs.acquire} $20,000+ cash/value.`);
-    obj.push(`${faction.verbs.exfil} successfully.`);
-  }else if(difficultyKey()==="normal"){
-    obj.push(`${faction.verbs.acquire} $30,000+ cash/value (same deployment).`);
-    obj.push(`${faction.verbs.secure} any contract and complete it (same deployment).`);
-    obj.push(`${faction.verbs.exfil} successfully.`);
-  }else{
-    obj.push(`${faction.verbs.acquire} $40,000+ cash/value (same deployment).`);
-    obj.push(`${faction.verbs.secure} ${SYSTEMS.locked} and loot it (same deployment).`);
-    obj.push(`${faction.verbs.exfil} on final exfil (if safe).`);
-  }
-
-  const constraints = [];
-  constraints.push(`No ${SYSTEMS.uav}.`);
-  if(difficultyKey()!=="easy") constraints.push(`No ${SYSTEMS.buy}.`);
-  if(mode==="squad") constraints.push("Total value is combined across the squad at exfil.");
-
-  const bonus = "Extract 2 valuables in your backpack.";
-
-  return {
-    title: "High-Value Extraction",
-    subtitle: `Faction: ${faction.name} • Focus: value • Map: ${map.name}`,
-    objectives: obj,
-    constraints,
-    bonus
+    title: fillVars(m.name, map),
+    subtitle: `Tier ${difficultyKey()==="easy" ? "1–2" : (difficultyKey()==="normal" ? "3–4" : "5")} • ${state.factionObj?.name || "Faction"}`,
+    objectives: (m.objectives || []).map(x=>fillVars(x, map)),
+    constraints: [], // keep empty; objectives carry constraints DMZ-style
+    bonus: m.rewardsLine ? `Rewards: ${m.rewardsLine}` : ""
   };
 }
 
 function buildMission(){
-  const map = MAPS[state.mapFlavor] || MAPS.any;
-  const faction = state.factionObj;
+  const map = mapObj();
+  const band = difficultyKey();
   const mode = state.squad ? "squad" : "solo";
-
-  const templates = [];
-  const add = (fn, w)=>{ for(let i=0;i<w;i++) templates.push(fn); };
-
-  if(faction.name==="White Lotus"){
-    add(missionTemplate_IntelOps, 4);
-    add(missionTemplate_ContractRun, 2);
-    add(missionTemplate_StrongholdPressure, 1);
-  }else if(faction.name==="Black Mous"){
-    add(missionTemplate_DeadDropLogistics, 4);
-    add(missionTemplate_ContractRun, 2);
-    add(missionTemplate_HighValueExtraction, 1);
-  }else if(faction.name==="Legion"){
-    add(missionTemplate_StrongholdPressure, 3);
-    add(missionTemplate_ContractRun, 3);
-    add(missionTemplate_HighValueExtraction, 1);
-  }else{
-    add(missionTemplate_HighValueExtraction, 4);
-    add(missionTemplate_ContractRun, 2);
-    add(missionTemplate_StrongholdPressure, 1);
-  }
-
-  return pick(templates)(faction, map, mode);
+  const pool = MISSIONS[band][mode];
+  return pickMissionFromPool(pool, map);
 }
+
 
 /* =========================
    CHAINS
