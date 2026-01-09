@@ -812,300 +812,434 @@ const MAPS = {
 /* =========================
    DMZ-AUTHENTIC MISSION TEMPLATES
 ========================= */
-/* =========================
-   DMZ-AUTHENTIC MISSIONS (CHECKLIST STYLE)
-   - Missions are NAME + bullet objectives (like real DMZ)
-   - Difficulty maps to Tier bands:
-     Easy   -> Tier 1–2
-     Normal -> Tier 3–4
-     Spicy  -> Tier 5 (brutal)
-========================= */
-const CONTRACTS = ["HVT","Secure Intel","Hostage Rescue","Raid Weapon Stash","Destroy Supplies","Eliminate HVT","Deliver Cargo","Signal Intelligence"];
-const CONTRACT_PHRASE = ["contract phone","contract phone via Tac-Map"];
+const CONTRACTS = ["HVT","Secure Intel","Hostage Rescue","Raid Weapon Stash"];
+const SYSTEMS = {
+  deadDrops: ["a dead drop","a dumpster dead drop","a police station dead drop"],
+  stronghold: "a Stronghold",
+  uav: "a UAV Tower",
+  buy: "a Buy Station",
+  locked: "a locked space"
+};
 
-function pickDifferent(arr, notVal){
-  const filtered = arr.filter(x=>x!==notVal);
-  return filtered.length ? pick(filtered) : pick(arr);
+function randSeed(){ return Math.random().toString(36).slice(2, 8).toUpperCase(); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function difficultyKey(){ return state.difficulty === 0 ? "easy" : (state.difficulty === 1 ? "normal" : "spicy"); }
+
+function chooseFaction(){
+  const diff = difficultyKey();
+  const pool = [];
+  for(const f of FACTIONS){
+    let w = 1;
+    if(f.name === "Crown") w = (diff === "spicy" ? 3 : (diff === "normal" ? 2 : 1));
+    if(f.name === "Black Mous") w = (diff === "normal" ? 2 : 1);
+    for(let i=0;i<w;i++) pool.push(f);
+  }
+  return pick(pool);
 }
 
-function mapObj(){
-  return MAPS[state.mapFlavor] || MAPS.any;
+function poi(map){
+  return pick((map && map.pois) ? map.pois : ["a major POI"]);
+}
+function contractType(){
+  return pick(["HVT","Secure Intel","Hostage Rescue","Raid Weapon Stash","Destroy Supplies","Eliminate HVT"]);
+}
+function deadDropName(){
+  return pick(["dumpster dead drop","police station dead drop","market dead drop","university dead drop","fortress dead drop"]);
+}
+function weaponCasePhrase(map){
+  const place = poi(map);
+  return `while carrying a Weapon Case at ${place}`;
 }
 
-function randPOI(map){
-  return pick(map.pois);
-}
-function randDeadDrop(){
-  return pick(["a dumpster dead drop","a police station dead drop","a riverside dead drop","a market dead drop","a university dead drop"]);
-}
-
-function fillVars(s, map){
-  // Simple placeholder replacement
-  let out = s;
-  const poi1 = randPOI(map);
-  const poi2 = randPOI(map);
-  const c1 = pick(CONTRACTS);
-  const c2 = pickDifferent(CONTRACTS, c1);
-  const dd = randDeadDrop();
-  out = out.replaceAll("{MAP}", map.name);
-  out = out.replaceAll("{POI}", poi1);
-  out = out.replaceAll("{POI2}", poi2);
-  out = out.replaceAll("{CONTRACT}", c1);
-  out = out.replaceAll("{CONTRACT2}", c2);
-  out = out.replaceAll("{DEADDROP}", dd);
-  out = out.replaceAll("{CONTRACTPHONE}", pick(CONTRACT_PHRASE));
-  return out;
-}
-
-// Mission pools by Tier band + mode.
-// Each mission: { name, objectives[], rewardsLine?, tags? }
-const MISSIONS = {
-  // Tier 1–2 (Easy)
-  easy: {
-    solo: [
-      { name:"Make Contact", objectives:[
-        "Use your Tac-Map and ping a {CONTRACTPHONE}.",
-        "Find a contract phone and start any contract.",
-      ], rewardsLine:"+5,000 XP" },
-      { name:"Information Seeker", objectives:[
-        "Ping a UAV Tower.",
-        "Activate 1 UAV Tower.",
-      ], rewardsLine:"+5,000 XP" },
-      { name:"Exfiltration", objectives:[
-        "Call in an exfil chopper at an exfil site marked with green smoke.",
-        "Exfil using the helicopter.",
-      ], rewardsLine:"+5,000 XP" },
-      { name:"Committed Shopper", objectives:[
-        "Sell a valuable item at a Buy Station.",
-        "Exfil successfully.",
-      ], rewardsLine:"+5,000 XP" },
-      { name:"Convenience", objectives:[
-        "Ping a vehicle on the Tac-Map.",
-        "Fully refuel and repair a vehicle at a gas station.",
-      ], rewardsLine:"+5,000 XP" },
-      { name:"Close Quarters", objectives:[
-        "Acquire a stronghold keycard.",
-        "Clear a stronghold of enemies.",
-      ], rewardsLine:"+7,500 XP" },
-      { name:"Down and Out", objectives:[
-        "Complete a Raid Weapon Stash contract without being downed.",
-      ], rewardsLine:"+7,500 XP" },
-      { name:"Air Support", objectives:[
-        "Acquire a killstreak from a buy station, supply drop, or elsewhere.",
-        "Exfil successfully.",
-      ], rewardsLine:"+5,000 XP" },
-      { name:"Demolitions", objectives:[
-        "Complete a Destroy Supplies contract to locate nearby safes.",
-        "Find and open a safe.",
-      ], rewardsLine:"+7,500 XP" },
-      { name:"Upgraded Arsenal", objectives:[
-        "Attach a suppressor to a weapon at a workbench.",
-        "Kill 6 enemies with a suppressed weapon.",
-      ], rewardsLine:"+5,000 XP" },
-      // Fun “meme” tier-2-ish
-      { name:"Bruiser", objectives:[
-        "Kill 20 enemies with your fists in one deployment.",
-      ], rewardsLine:"+15,000 XP" },
-      { name:"Frogicide", objectives:[
-        "Destroy 3 Tactical Amphibious Vehicles in under 5 seconds.",
-      ], rewardsLine:"+15,000 XP" },
-    ],
-    squad: [
-      { name:"Team Player", objectives:[
-        "Hold the request to assimilate with a nearby squad.",
-        "Successfully assimilate with another squad.",
-      ], rewardsLine:"+7,500 XP" },
-      { name:"Stress Test", objectives:[
-        "Extract in a helo carrying 7 or more operators.",
-      ], rewardsLine:"+15,000 XP" },
-      { name:"Anti-Air", objectives:[
-        "Capture 2 SAM Sites in one deployment.",
-        "Open a supply drop.",
-      ], rewardsLine:"+7,500 XP" },
-      { name:"Hostage Rescue", objectives:[
-        "Complete a Rescue Hostage contract.",
-        "Exfil with the hostage evac helo.",
-      ], rewardsLine:"+7,500 XP" },
-      { name:"Hostiles Located", objectives:[
-        "Ping 5 enemies.",
-        "Kill 5 enemies.",
-      ], rewardsLine:"+5,000 XP" },
-    ]
+// DMZ-style missions: NAME + checklist objectives (no prose)
+const MISSION_BANK = {
+  "White Lotus": {
+    T1: {
+      solo: [
+        { title:"Make Contact", objectives:[
+            "Use your Tac-Map and ping a contract phone",
+            "Find a contract phone and download the intel to start the contract"
+          ]},
+        { title:"Air Support", objectives:[
+            "Acquire a killstreak from a Buy Station, supply drop, or elsewhere"
+          ]},
+        { title:"Upgraded Arsenal", objectives:[
+            "Attach a suppressor to a weapon at a workbench",
+            "Kill 6 enemies with a suppressed weapon in the same deployment"
+          ]},
+        { title:"Commanding Intel", objectives:[
+            "Complete a Secure Intel contract to reveal a Commander",
+            "Ping a Commander"
+          ]},
+        { title:"Fuel Shortage", objectives:[
+            "Siphon gas from 1 vehicle",
+            "Use 1 gas can to refuel a vehicle in the same deployment"
+          ]},
+      ],
+      squad: [
+        { title:"Team Warm-Up", objectives:[
+            "Ping 5 enemies",
+            "Kill 10 enemies as a squad in the same deployment"
+          ]},
+        { title:"Exfiltration", objectives:[
+            "Call in an exfil chopper at an exfil site",
+            "Exfil using the helicopter with the full squad"
+          ]},
+      ]
+    },
+    T3: {
+      solo: [
+        { title:"Operation Black Gold", objectives:[
+            `Kill 3 enemies at ${poi({pois:["Hafid Port","Rohan Oil","Sattiq Cave Complex","Zaya Observatory"]})}`,
+            `Kill 3 enemies at ${poi({pois:["Hafid Port","Rohan Oil","Sattiq Cave Complex","Zaya Observatory"]})} in the same deployment`,
+            `Kill 3 enemies at ${poi({pois:["Hafid Port","Rohan Oil","Sattiq Cave Complex","Zaya Observatory"]})} in the same deployment`
+          ]},
+        { title:"Key Elimination", objectives:[
+            "Complete an Eliminate HVT contract",
+            "Take a key found on the HVT or elsewhere",
+            "Use a key to unlock a locked space or locked cache in the same deployment"
+          ]},
+        { title:"Eavesdrop", objectives:[
+            `Take a discrete radio transmitter from a ${deadDropName()}`,
+            "Plant the transmitter at a high-traffic location",
+            "Upload the frequency to an Upload Station after it's planted"
+          ]},
+        { title:"Pathfinder", objectives:[
+            `Loot a GPS tracker from a ${deadDropName()}`,
+            "Travel to 6 unique POIs while carrying the tracker in one deployment",
+            "Extract the tracker"
+          ]},
+        { title:"Medical Mule", objectives:[
+            `Deliver 3 revive pistols or self-revives to a ${deadDropName()} in one deployment`,
+            `Deliver 5 AFAKs or large medical bags to the same ${deadDropName()} in the same deployment`
+          ]},
+      ],
+      squad: [
+        { title:"Pacific Foothold", objectives:[
+            `Deliver 1 bottle of Gun Oil to a ${deadDropName()}`,
+            `Deliver 2 VCRs or Game Consoles to the same ${deadDropName()} in the same deployment`,
+            `Deliver 3 pieces of deal intel to the same ${deadDropName()} in the same deployment`
+          ]},
+        { title:"Quid Pro Quo", objectives:[
+            "Call in an LTV at a vehicle drop",
+            "Drive the LTV to two different POIs in the same deployment",
+            "Extract in the same deployment"
+          ]},
+      ]
+    },
+    T5: {
+      solo: [
+        { title:"Lone Hunter", objectives:[
+            "Solo infil without any weapons",
+            "Kill 1 Operator in the same deployment",
+            "Exfil in the same deployment without having picked up any weapons"
+          ], constraints:["Brutal: if you pick up a weapon, mission fails."]},
+        { title:"Untouchable", objectives:[
+            "Extract a Weapon Case",
+            "Do not take health damage in that deployment"
+          ], constraints:["Brutal: any health damage fails."]},
+        { title:"Deadlines", objectives:[
+            "Complete 4 contracts in under 6:00 minutes"
+          ], constraints:["Brutal: timer starts on infil."]},
+        { title:"Air Supremacy", objectives:[
+            "Control 3 SAM sites simultaneously"
+          ], constraints:["Brutal: must keep all 3 active at once."]},
+        { title:"Final Countdown", objectives:[
+            "Solo infil",
+            "Extract on final exfil with 3 weapons dropped by enemy operators in the same deployment"
+          ], constraints:["Brutal: final exfil only."]},
+      ],
+      squad: [
+        { title:"Contractual Obligations", objectives:[
+            "Complete 8 unique contracts in a single deployment"
+          ], constraints:["Brutal: contract types must all be different."]},
+        { title:"Stress Test", objectives:[
+            "Extract in a helicopter carrying 7 or more operators"
+          ], constraints:["Brutal: must exfil with 7+ on board."]},
+      ]
+    }
   },
 
-  // Tier 3–4 (Normal)
-  normal: {
-    solo: [
-      { name:"Turn the Tide", objectives:[
-        "Complete 2 Secure Intel contracts.",
-        "Complete a Destroy Supplies contract in the same deployment.",
-        "Drill 3 safes in the same deployment.",
-      ], rewardsLine:"+15,000 XP" },
-      { name:"Contract Killer", objectives:[
-        "Complete 4 types of contracts in one deployment.",
-        "Take final exfil in the same deployment.",
-      ], rewardsLine:"+15,000 XP" },
-      { name:"Bedrock", objectives:[
-        "Enter the Koschei Complex.",
-        "Investigate the Chemical Plant.",
-        "Extract from the Koschei Complex.",
-      ], rewardsLine:"+10,000 XP" },
-      { name:"Unarmed and Dangerous", objectives:[
-        "Infil solo without any weapons.",
-        "Exfil in the same deployment without picking up any weapons.",
-      ], rewardsLine:"+10,000 XP" },
-      { name:"Title Deed", objectives:[
-        "Take a hard drive from a dead drop.",
-        "Take a second hard drive from another dead drop.",
-        "Upload both hard drives at the same time in {POI}.",
-      ], rewardsLine:"+30,000 XP" },
-      { name:"Eyes and Ears", objectives:[
-        "Take a discrete radio transmitter from {DEADDROP}.",
-        "Plant the radio transmitter under a central security desk (same deployment).",
-        "Extract in the same deployment.",
-      ], rewardsLine:"+15,000 XP" },
-      { name:"Flight Plans", objectives:[
-        "Take 3 hacked thumb drives from a dead drop.",
-        "In one deployment, plant thumb drives in 3 computers at: {POI}, {POI2}, and another major POI.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Rifle Some Feathers", objectives:[
-        "Buy a SP-X 80 from a Buy Station.",
-        "Kill 15 Operators or Commanders with a SP-X 80.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Firearm Regulation", objectives:[
-        "Deliver 25 weapons to {MAP} dead drops in a single deployment.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Pathfinder", objectives:[
-        "Loot a GPS Tracker from {DEADDROP}.",
-        "Travel to every POI in {MAP} while carrying the GPS Tracker in one deployment.",
-        "Extract the GPS Tracker.",
-      ], rewardsLine:"+10,000 XP" },
-      { name:"Deadlines", objectives:[
-        "Complete 4 contracts in under 6:00 minutes.",
-      ], rewardsLine:"+15,000 XP" },
-      { name:"Icebreaker", objectives:[
-        "Pick up the letter of introduction and tracker from a dead drop.",
-        "Deliver the letter of introduction to a second dead drop (same deployment).",
-        "Deliver the tracking device to the same dead drop (same deployment).",
-      ], rewardsLine:"+15,000 XP" },
-    ],
-    squad: [
-      { name:"Operators In Need", objectives:[
-        "Help a squadmate complete 3 missions.",
-      ], rewardsLine:"+10,000 XP" },
-      { name:"Substantial Findings", objectives:[
-        "Take 2 tracking devices from dead drops in {MAP}.",
-        "Plant a tracker at {POI}.",
-        "Plant a tracker at {POI2}.",
-      ], rewardsLine:"+10,000 XP" },
-      { name:"Quid Pro Quo", objectives:[
-        "Call in a vehicle drop near {POI}.",
-        "Drive the vehicle to {POI2} in the same deployment.",
-        "Drive the vehicle to a third POI in the same deployment.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Air Supremacy", objectives:[
-        "Control 3 SAM sites simultaneously.",
-      ], rewardsLine:"+15,000 XP" },
-    ]
+  "Black Mous": {
+    T1: {
+      solo: [
+        { title:"Information Seeker", objectives:[
+            "Ping a UAV Tower",
+            "Activate 1 UAV Tower"
+          ]},
+        { title:"Convenience", objectives:[
+            "Ping a vehicle on the Tac-Map",
+            "Fully refuel and repair a vehicle at a gas station"
+          ]},
+        { title:"Committed Shopper", objectives:[
+            "Sell a valuable item at a Buy Station"
+          ]},
+        { title:"Hostiles Located", objectives:[
+            "Ping 5 enemies",
+            "Kill 5 enemies"
+          ]},
+        { title:"Exfiltration", objectives:[
+            "Call in an exfil chopper",
+            "Exfil using the helicopter"
+          ]},
+      ],
+      squad: [
+        { title:"Team Player", objectives:[
+            "Request to assimilate with a nearby squad",
+            "Successfully assimilate with another squad"
+          ]},
+      ]
+    },
+    T3: {
+      solo: [
+        { title:"Unarmed and Dangerous", objectives:[
+            "Infil solo without any weapons",
+            "Exfil in the same deployment without picking up any weapons"
+          ]},
+        { title:"Badge of Honor", objectives:[
+            "Acquire a Basilisk (commonly found in police stations)",
+            "Kill 9 enemies with headshots using a Basilisk in the same deployment"
+          ]},
+        { title:"Anti-Air", objectives:[
+            "Capture 2 SAM Sites in one deployment",
+            "Open a supply drop"
+          ]},
+        { title:"Close Quarters", objectives:[
+            "Acquire a stronghold keycard",
+            "Clear a stronghold of enemies"
+          ]},
+        { title:"Bedrock", objectives:[
+            "Enter a restricted complex (e.g., bunker/underground area)",
+            "Investigate the main plant/wing",
+            "Extract from the complex"
+          ]},
+      ],
+      squad: [
+        { title:"Icebreaker", objectives:[
+            `Pick up a letter and tracker from a ${deadDropName()}`,
+            `Deliver the letter to a ${deadDropName()} in the same deployment`,
+            "Deliver the tracking device to the same dead drop in the same deployment"
+          ]},
+      ]
+    },
+    T5: {
+      solo: [
+        { title:"Contract Killer", objectives:[
+            "Complete 4 types of contracts in one deployment",
+            "Take final exfil in the same deployment"
+          ], constraints:["Brutal: final exfil only."]},
+        { title:"Cut the Head", objectives:[
+            "Trade for an Encryption Key at a Buy Station",
+            "Activate 4 laptops in under 2 minutes while holding the Encryption Key",
+            "Extract with the Encryption Key"
+          ], constraints:["Brutal: timer is strict."]},
+        { title:"Firearm Regulation", objectives:[
+            "Deliver 25 weapons to dead drops in a single deployment"
+          ], constraints:["Brutal: 25 in one deployment."]},
+      ],
+      squad: [
+        { title:"The Client is King", objectives:[
+            "Complete 8 contracts in 8 unique POIs in one deployment"
+          ], constraints:["Brutal: POIs must be different."]},
+        { title:"Delivery Problem", objectives:[
+            "Take 7 tracking devices from a dead drop",
+            "Plant a tracking device under each of 7 cargo trucks",
+            "Extract in the same deployment"
+          ], constraints:["Brutal: all 7 must be planted."]},
+      ]
+    }
   },
 
-  // Tier 5 (Spicy) – brutal
-  spicy: {
-    solo: [
-      { name:"Final Countdown", objectives:[
-        "Solo Infil.",
-        "Extract with final exfil with 3 weapons dropped by enemy operators in the same deployment.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Lone Hunter", objectives:[
-        "Infil without any teammates and without any weapons.",
-        "Kill 1 operator in the same deployment.",
-        "Exfil in the same deployment without having picked up any weapons.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Untouchable", objectives:[
-        "Extract a Weapons Case without having taken health damage in that deployment.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Contractual Obligations", objectives:[
-        "Complete 8 unique contracts in a single deployment.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"The Client is King", objectives:[
-        "Complete 8 contracts in 8 unique POIs in one deployment.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Crack the Code", objectives:[
-        "Drill a safe using a special drill found in a keypad-locked room.",
-        "Extract the note found inside in the same deployment.",
-      ], rewardsLine:"+40,000 XP" },
-      { name:"Cut the Head", objectives:[
-        "Trade for an Encryption Key at a Buy Station.",
-        "Activate 4 laptops in a market in under 2 minutes while carrying the Encryption Key.",
-        "Extract with the Encryption Key.",
-      ], rewardsLine:"+40,000 XP" },
-      { name:"Fearless", objectives:[
-        "Clear a major fortress while carrying a weapon case.",
-        "Activate a UAV tower while carrying a weapon case.",
-        "Extract with a weapon case in the same deployment.",
-      ], rewardsLine:"+30,000 XP" },
-      { name:"Profit and Pain", objectives:[
-        "Infil without any teammates without any weapons.",
-        "Extract 3 weapons with at least 3 attachments each in the same deployment.",
-      ], rewardsLine:"+15,000 XP" },
-      { name:"Spice of Life", objectives:[
-        "Kill 10 enemies with a single ammo clip.",
-        "Kill enemies using 20 different weapons in the same deployment.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Delivery Problem", objectives:[
-        "Take 7 tracking devices from a dead drop.",
-        "Plant a tracking device under each of 7 cargo trucks in a parking garage.",
-        "Extract in the same deployment.",
-      ], rewardsLine:"+20,000 XP" },
-    ],
-    squad: [
-      { name:"Hunter", objectives:[
-        "Complete 3 Hunt contracts in one deployment.",
-        "Exfil successfully.",
-      ], rewardsLine:"+15,000 XP" },
-      { name:"Contract Killer", objectives:[
-        "Complete 4 types of contracts in one deployment.",
-        "Take final exfil in the same deployment.",
-      ], rewardsLine:"+15,000 XP" },
-      { name:"Last Line of Defense", objectives:[
-        "Kill 150 enemies in {MAP} in the same deployment.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Breaking the Bunker", objectives:[
-        "Take a weapon from a dead drop.",
-        "Kill the Sniper with the weapon.",
-        "Kill the Rhino with the weapon.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Firearm Regulation", objectives:[
-        "Deliver 25 weapons to {MAP} dead drops in a single deployment.",
-      ], rewardsLine:"+20,000 XP" },
-      { name:"Contractual Obligations", objectives:[
-        "Complete 8 unique contracts in a single deployment.",
-      ], rewardsLine:"+20,000 XP" },
-    ]
+  "Legion": {
+    T1: {
+      solo: [
+        { title:"Frogicide", objectives:[
+            "Destroy 3 Tactical Amphibious Vehicles in under 5 seconds"
+          ]},
+        { title:"Bruiser", objectives:[
+            "Kill 20 enemies with your fists in one deployment"
+          ]},
+        { title:"Make Contact", objectives:[
+            "Ping a contract phone",
+            "Start a contract by downloading the intel"
+          ]},
+      ],
+      squad: [
+        { title:"Hunter", objectives:[
+            "Complete 3 Hunt contracts in one deployment",
+            "Exfil successfully"
+          ]},
+      ]
+    },
+    T3: {
+      solo: [
+        { title:"Turn the Tide", objectives:[
+            "Complete 2 Secure Intel contracts",
+            "Complete a Destroy Supplies contract in the same deployment",
+            "Drill 3 safes in the same deployment"
+          ]},
+        { title:"Contract Killer", objectives:[
+            "Complete 4 types of contracts in one deployment",
+            "Take final exfil in the same deployment"
+          ]},
+        { title:"Eye in the Sky", objectives:[
+            "Open 5 airplane supply drops"
+          ]},
+      ],
+      squad: [
+        { title:"Operators In Need", objectives:[
+            "Help a squadmate complete 3 missions"
+          ]},
+        { title:"Anti-Air Battery", objectives:[
+            "Capture 2 SAM sites in one deployment",
+            "Open 2 supply drops in the same deployment"
+          ]},
+      ]
+    },
+    T5: {
+      solo: [
+        { title:"Final Countdown", objectives:[
+            "Solo infil",
+            "Extract on final exfil with 3 weapons dropped by enemy operators in the same deployment"
+          ], constraints:["Brutal: final exfil only."]},
+        { title:"Spice of Life", objectives:[
+            "Kill 10 enemies with a single ammo clip",
+            "Kill enemies using 20 different weapons in the same deployment"
+          ], constraints:["Brutal: 20 different weapons in one deployment."]},
+      ],
+      squad: [
+        { title:"Contractual Obligations", objectives:[
+            "Complete 8 unique contracts in a single deployment"
+          ], constraints:["Brutal: all unique."]},
+        { title:"Stress Test", objectives:[
+            "Extract in a helicopter carrying 7 or more operators"
+          ], constraints:["Brutal: 7+ on board."]},
+      ]
+    }
+  },
+
+  "Crown": {
+    T1: {
+      solo: [
+        { title:"Air Support", objectives:[
+            "Acquire a killstreak from a Buy Station, supply drop, or elsewhere"
+          ]},
+        { title:"Demolitions", objectives:[
+            "Complete a Destroy Supplies contract to locate nearby safes",
+            "Find and open a safe"
+          ]},
+        { title:"Eye in the Sky", objectives:[
+            "Open 3 supply drops in the same deployment"
+          ]},
+      ],
+      squad: [
+        { title:"Contract Sweep", objectives:[
+            "Complete 2 different contract types in one deployment",
+            "Exfil successfully"
+          ]},
+      ]
+    },
+    T3: {
+      solo: [
+        { title:"Rifle Some Feathers", objectives:[
+            "Buy a SP-X 80 from a Buy Station",
+            "Kill 15 Operators or Commanders with a SP-X 80"
+          ]},
+        { title:"Profit and Pain", objectives:[
+            "Infil solo without any teammates and without any weapons",
+            "Extract 3 weapons with at least 3 attachments each in the same deployment"
+          ]},
+        { title:"Eyes and Ears", objectives:[
+            `Take a discrete radio transmitter from a ${deadDropName()}`,
+            "Plant the transmitter under a security desk at a high-value location",
+            "Extract in the same deployment"
+          ]},
+      ],
+      squad: [
+        { title:"Fearless", objectives:[
+            "Clear a fortress while carrying a Weapon Case",
+            "Activate a UAV tower while carrying a Weapon Case",
+            "Extract with a Weapon Case in the same deployment"
+          ]},
+      ]
+    },
+    T5: {
+      solo: [
+        { title:"Contract Killer", objectives:[
+            "Complete 4 types of contracts in one deployment",
+            "Take final exfil in the same deployment"
+          ], constraints:["Brutal: final exfil only."]},
+        { title:"Crack the Code", objectives:[
+            "Drill a safe using a special drill from a locked room",
+            "Extract the note found inside"
+          ], constraints:["Brutal: must use the special drill."]},
+        { title:"Breaking the Bunker", objectives:[
+            "Take the weapon from a dead drop",
+            "Kill the Sniper with the weapon",
+            "Kill the Rhino with the weapon"
+          ], constraints:["Brutal: must use the dead drop weapon."]},
+      ],
+      squad: [
+        { title:"Flight Plans", objectives:[
+            "Take 3 hacked thumb drives from a dead drop",
+            "Plant thumb drives into 3 separate computers in one deployment"
+          ], constraints:["Brutal: all plants in one deployment."]},
+        { title:"Last Line of Defense", objectives:[
+            "Kill 150 enemies in the same deployment"
+          ], constraints:["Brutal: 150 in one deployment."]},
+      ]
+    }
   }
 };
 
-function pickMissionFromPool(pool, map){
-  const m = pick(pool);
-  // Clone and fill placeholders
-  return {
-    title: fillVars(m.name, map),
-    subtitle: `Tier ${difficultyKey()==="easy" ? "1–2" : (difficultyKey()==="normal" ? "3–4" : "5")} • ${state.factionObj?.name || "Faction"}`,
-    objectives: (m.objectives || []).map(x=>fillVars(x, map)),
-    constraints: [], // keep empty; objectives carry constraints DMZ-style
-    bonus: m.rewardsLine ? `Rewards: ${m.rewardsLine}` : ""
-  };
+function tierForDifficulty(){
+  // Easy => Tier 1/2 vibe, Normal => Tier 3/4 vibe, Spicy => Tier 5 vibe
+  return (difficultyKey() === "easy") ? "T1" : (difficultyKey() === "normal" ? "T3" : "T5");
 }
 
 function buildMission(){
-  const map = mapObj();
-  const band = difficultyKey();
+  const map = MAPS[state.mapFlavor] || MAPS.any;
+  const faction = state.factionObj || chooseFaction();
+  const tier = tierForDifficulty();
   const mode = state.squad ? "squad" : "solo";
-  const pool = MISSIONS[band][mode];
-  return pickMissionFromPool(pool, map);
+
+  const bank = (MISSION_BANK[faction.name] && MISSION_BANK[faction.name][tier] && MISSION_BANK[faction.name][tier][mode])
+    ? MISSION_BANK[faction.name][tier][mode]
+    : [];
+
+  // Fallback: if bank empty, try any faction in tier/mode
+  let list = bank;
+  if(!list.length){
+    const all = [];
+    for(const fname of Object.keys(MISSION_BANK)){
+      const t = MISSION_BANK[fname][tier];
+      if(t && t[mode]) all.push(...t[mode].map(m=>({...m, _fallbackFaction: fname})));
+    }
+    list = all.length ? all : [{title:"Make Contact", objectives:["Ping a contract phone","Start any contract"], constraints:[], bonus:"—"}];
+  }
+
+  const raw = pick(list);
+  const effectiveFaction = raw._fallbackFaction || faction.name;
+
+  const constraints = raw.constraints ? raw.constraints.slice() : [];
+  // Default constraints by tier
+  if(tier==="T5"){
+    constraints.push("Brutal: complete all objectives in ONE deployment unless stated otherwise.");
+  } else if(tier==="T3"){
+    constraints.push("Complete all objectives in ONE deployment unless stated otherwise.");
+  }
+
+  const bonus = raw.bonus || (tier==="T5" ? "Final exfil (if safe)." : "—");
+
+  return {
+    title: raw.title,
+    subtitle: `TIER ${tier==="T1" ? "1-2" : (tier==="T3" ? "3-4" : "5")} • ${effectiveFaction} • ${map.name}`,
+    objectives: raw.objectives || [],
+    constraints,
+    bonus
+  };
 }
-
-
 /* =========================
    CHAINS
 ========================= */
