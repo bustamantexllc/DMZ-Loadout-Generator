@@ -1,4 +1,3 @@
-// VERSION v8: Separate Loadout Roll and Mission Roll
 <!doctype html>
 <html lang="en">
 <head>
@@ -441,7 +440,7 @@
 
         <div class="controls">
           <div class="btnRow">
-            <button class="primary" id="rollBtn">ROLL</button>
+            <button class="primary" id="rollBtn">ROLL LOADOUT</button>
             <button class="secondary" id="copyBtn">Copy</button>
             <button class="secondary" id="editPoolsBtn" title="Edit loadout pools (saved in your browser)">Edit Pools</button>
           </div>
@@ -491,6 +490,7 @@
 
         <div class="controls">
           <div class="btnRow">
+            <button class="primary" id="rollMissionBtn">ROLL MISSION</button>
             <button class="secondary" id="startChainBtn">Start Chain</button>
             <button class="ok" id="advanceChainBtn">Advance Step</button>
             <button class="danger" id="failChainBtn">Fail / Reset</button>
@@ -1696,57 +1696,20 @@ async function copyText(payload){
    MAIN ROLL
 ========================= */
 let lastRoll = null;
+let currentKit = null;
+let currentMission = null;
 
-function roll(){
-  const pools = getPools();
+function setNewSeed(){
   state.seed = randSeed();
   elSeed.textContent = `Seed: ${state.seed}`;
+}
 
-  const chain = getActiveChain();
-  if(state.chains && chain && canUseChain(chain)){
-    state.factionObj = FACTIONS.find(x=>x.name===chain.faction) || chooseFaction();
-    elFactionBriefing.innerHTML = `<b>${escapeHtml(chain.faction)}:</b> ${escapeHtml(chain.briefing)}`;
-  }else{
-    state.factionObj = chooseFaction();
-    elFactionBriefing.innerHTML = `<b>${escapeHtml(state.factionObj.name)}:</b> ${escapeHtml(pick(state.factionObj.intros))}`;
-  }
-
-  renderBadges(state.factionObj);
-
-  const kit = generateLoadout(pools);
-  renderLoadout(kit);
-
-  const diffName = ["Easy","Normal","Spicy"][state.difficulty];
-  const modeName = state.squad ? "Squad" : "Solo";
-  const chainStatus = state.chains ? "Chains ON" : "Chains OFF";
-  const mapName = MAPS[state.mapFlavor]?.name || "Any";
-
-  elLoadoutHeadline.textContent = `${state.regain ? "Regain ON" : "Regain OFF"} • ${state.attachments ? "Attachments ON" : "Attachments OFF"} • Meme↔Meta ${state.memeMeta}% • ${state.seed}`;
-  elMissionHeadline.textContent = `${modeName} • ${diffName} • ${chainStatus} • ${mapName} • ${state.seed}`;
-  modePill.textContent = `Mode: ${modeName}`;
-
-  let mission = null;
-  if(state.chains && chain && canUseChain(chain)){
-    renderChainUI(chain);
-    const step = chain.steps[Math.min(Math.max(state.activeChainStep,0), chain.steps.length-1)];
-    mission = {
-      title: `${chain.name}: ${step.title}`,
-      subtitle: `Faction: ${chain.faction} • Chain step ${state.activeChainStep+1}/${chain.steps.length}`,
-      objectives: step.objectives,
-      constraints: step.constraints,
-      bonus: step.bonus
-    };
-  }else{
-    elChainBlock.classList.add("hidden");
-    elChainBlock.innerHTML = "";
-    mission = buildMission();
-    renderMission(mission);
-  }
-
+function syncLastRoll(){
+  if(!currentKit || !currentMission) return;
   lastRoll = {
     seed: state.seed,
-    faction: state.factionObj.name,
-    factionTone: state.factionObj.tone,
+    faction: state.factionObj?.name || "—",
+    factionTone: state.factionObj?.tone || "ok",
     regain: state.regain,
     attachments: state.attachments,
     squad: state.squad,
@@ -1754,18 +1717,71 @@ function roll(){
     difficulty: state.difficulty,
     mapFlavor: state.mapFlavor,
     memeMeta: state.memeMeta,
-    kit,
-    mission
+    kit: currentKit,
+    mission: currentMission
   };
+}
 
+function rollLoadout(options={keepSeed:false}){
+  const pools = getPools();
+  if(!options.keepSeed) setNewSeed();
+  if(!state.factionObj) state.factionObj = chooseFaction();
+  currentKit = generateLoadout(pools);
+  renderLoadout(currentKit);
+  elLoadoutHeadline.textContent = `${state.regain ? "Regain ON" : "Regain OFF"} • ${state.attachments ? "Attachments ON" : "Attachments OFF"} • Meme↔Meta ${state.memeMeta}% • ${state.seed}`;
+  syncLastRoll();
   saveAppState();
+}
+
+function rollMission(options={keepSeed:false}){
+  if(!options.keepSeed) setNewSeed();
+  const chain = getActiveChain();
+  if(state.chains && chain && canUseChain(chain)){
+    state.factionObj = FACTIONS.find(x=>x.name===chain.faction) || chooseFaction();
+    elFactionBriefing.innerHTML = `<b>${escapeHtml(chain.faction)}:</b> ${escapeHtml(chain.briefing)}`;
+    renderBadges(state.factionObj);
+    renderChainUI(chain);
+    const step = chain.steps[Math.min(Math.max(state.activeChainStep,0), chain.steps.length-1)];
+    currentMission = {
+      title: `${chain.name}: ${step.title}`,
+      subtitle: `Faction: ${chain.faction} • Chain step ${state.activeChainStep+1}/${chain.steps.length}`,
+      objectives: step.objectives,
+      constraints: step.constraints,
+      bonus: step.bonus,
+      chainInfo: { name: chain.name, step: state.activeChainStep+1, steps: chain.steps.length }
+    };
+  } else {
+    state.factionObj = chooseFaction();
+    elFactionBriefing.innerHTML = `<b>${escapeHtml(state.factionObj.name)}:</b> ${escapeHtml(pick(state.factionObj.intros))}`;
+    renderBadges(state.factionObj);
+    elChainBlock.classList.add("hidden");
+    elChainBlock.innerHTML = "";
+    currentMission = buildMission();
+    renderMission(currentMission);
+  }
+  const diffName = ["Easy","Normal","Spicy"][state.difficulty];
+  const modeName = state.squad ? "Squad" : "Solo";
+  const chainStatus = state.chains ? "Chains ON" : "Chains OFF";
+  const mapName = MAPS[state.mapFlavor]?.name || "Any";
+  elMissionHeadline.textContent = `${modeName} • ${diffName} • ${chainStatus} • ${mapName} • ${state.seed}`;
+  modePill.textContent = `Mode: ${modeName}`;
+  syncLastRoll();
+  saveAppState();
+}
+
+
+
+function rollBoth(){
+  setNewSeed();
+  rollLoadout({keepSeed:true});
+  rollMission({keepSeed:true});
 }
 
 /* =========================
    DAILY ACTIONS
 ========================= */
 function generateDailyFromCurrent(){
-  if(!lastRoll) roll();
+  if(!currentKit || !currentMission) rollBoth();
   const d = { date: nowLocalISODate(), ...lastRoll };
   saveDaily(d);
   renderDaily(d);
@@ -1783,27 +1799,28 @@ function bindToggle(id, key){
     setSwitch(el, state[key]);
     if(key==="chains" && !state.chains) failChain();
     saveAppState();
-    roll();
+    rollBoth();
   });
 }
 
-document.getElementById("rollBtn").addEventListener("click", roll);
-document.getElementById("copyBtn").addEventListener("click", ()=>{ if(!lastRoll) roll(); copyText(lastRoll); });
+document.getElementById("rollBtn").addEventListener("click", ()=>rollLoadout());
+document.getElementById("rollMissionBtn").addEventListener("click", ()=>rollMission());
+document.getElementById("copyBtn").addEventListener("click", ()=>{ if(!currentKit || !currentMission) rollBoth(); copyText(lastRoll); });
 
 document.getElementById("editPoolsBtn").addEventListener("click", openModal);
 document.getElementById("closeBtn").addEventListener("click", closeModal);
-document.getElementById("savePoolsBtn").addEventListener("click", ()=>{ saveFromEditor(); closeModal(); roll(); });
-document.getElementById("resetBtn").addEventListener("click", ()=>{ resetPools(); roll(); });
+document.getElementById("savePoolsBtn").addEventListener("click", ()=>{ saveFromEditor(); closeModal(); rollBoth(); });
+document.getElementById("resetBtn").addEventListener("click", ()=>{ resetPools(); rollBoth(); });
 document.getElementById("copyJsonBtn").addEventListener("click", copyPoolsJson);
 
 modalOverlay.addEventListener("click", (e)=>{ if(e.target === modalOverlay) closeModal(); });
 window.addEventListener("keydown", (e)=>{ if(e.key === "Escape" && modalOverlay.classList.contains("show")) closeModal(); });
 
-diffSlider.addEventListener("input", ()=>{ state.difficulty = parseInt(diffSlider.value,10)||0; updateDifficultyUI(); saveAppState(); roll(); });
-mmSlider.addEventListener("input", ()=>{ state.memeMeta = parseInt(mmSlider.value,10)||0; updateMemeMetaUI(); saveAppState(); roll(); });
+diffSlider.addEventListener("input", ()=>{ state.difficulty = parseInt(diffSlider.value,10)||0; updateDifficultyUI(); saveAppState(); rollBoth(); });
+mmSlider.addEventListener("input", ()=>{ state.memeMeta = parseInt(mmSlider.value,10)||0; updateMemeMetaUI(); saveAppState(); rollBoth(); });
 
 exportFormatEl.addEventListener("change", saveAppState);
-mapFlavorEl.addEventListener("change", ()=>{ state.mapFlavor = mapFlavorEl.value || "any"; saveAppState(); roll(); });
+mapFlavorEl.addEventListener("change", ()=>{ state.mapFlavor = mapFlavorEl.value || "any"; saveAppState(); rollBoth(); });
 
 bindToggle("regainSwitch","regain");
 bindToggle("attachSwitch","attachments");
@@ -1817,14 +1834,14 @@ document.getElementById("startChainBtn").addEventListener("click", ()=>{
   if(!c) return showToast("No chains for this mode");
   saveAppState();
   showToast(`Chain started: ${c.name}`);
-  roll();
+  rollBoth();
 });
 document.getElementById("advanceChainBtn").addEventListener("click", ()=>{
   if(!state.chains) return showToast("Enable Mission Chains first");
   const res = advanceChain();
   saveAppState();
   showToast(res?.done ? "Chain completed!" : "Advanced chain step");
-  roll();
+  rollBoth();
 });
 document.getElementById("failChainBtn").addEventListener("click", ()=>{
   if(!state.chains) return showToast("Enable Mission Chains first");
@@ -1832,7 +1849,7 @@ document.getElementById("failChainBtn").addEventListener("click", ()=>{
   failChain();
   saveAppState();
   showToast("Chain reset");
-  roll();
+  rollBoth();
 });
 
 document.getElementById("dailyGenerateBtn").addEventListener("click", ()=>{
@@ -1874,7 +1891,7 @@ document.getElementById("dailyClearBtn").addEventListener("click", ()=>{
   dailyResetPill.textContent = `Resets: ${fmtDuration(msUntilLocalMidnight())}`;
   setInterval(()=>{ dailyResetPill.textContent = `Resets: ${fmtDuration(msUntilLocalMidnight())}`; }, 30_000);
 
-  roll();
+  rollBoth();
 })();
 </script>
 </body>
